@@ -21,7 +21,7 @@ const uploadHandler = (fileBuffer, folder) => {
   });
 };
 
-const isProd = process.env.NODE_ENV === "production";
+const isProd = process.env.NODE_ENV?.trim().toLowerCase() === "production";
 const DUMMY_PASSWORD_HASH =
   "$2b$10$7EqJtq98hPqEX7fNZaFWoOeYc4v5v5yQbO5B5H4a2B8h8Z9d9W6aK";
 

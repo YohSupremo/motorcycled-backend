@@ -196,8 +196,11 @@ export const deactivateOwnAccount = async (req, res) => {
     res.cookie("token", null, {
       expires: new Date(Date.now()),
       httpOnly: true,
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      secure: process.env.NODE_ENV === "production",
+      sameSite:
+        process.env.NODE_ENV?.trim().toLowerCase() === "production"
+          ? "none"
+          : "lax",
+      secure: process.env.NODE_ENV?.trim().toLowerCase() === "production",
     });
 
     return res.status(200).json({
