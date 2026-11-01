@@ -27,9 +27,20 @@ app.use(cookieParser());
 
 // Must allow the exact frontend origin with credentials: true so the
 // browser will store and send the JWT cookie on cross-origin requests.
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://motorcycled-frontend.onrender.com",
+];
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   }),
 );
