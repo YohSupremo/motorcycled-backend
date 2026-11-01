@@ -2,7 +2,6 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import mongoose from "mongoose";
 import connection from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
@@ -45,11 +44,6 @@ app.use(
   }),
 );
 
-connection();
-// Seed default categories & brands after mongoose connects.
-// connection() returns void, so we use the mongoose "open" event.
-mongoose.connection.once("open", () => seedCatalogDefaults());
-
 app.use("/api/v1", authRoutes);
 app.use("/api/v1/profile", userRoutes);
 app.use("/api/v1", productRoutes);
@@ -74,6 +68,20 @@ app.use((err, _req, res, _next) => {
   });
 });
 
-app.listen(process.env.PORT, () => {
-  console.log("Working on PORT: ", process.env.PORT);
-});
+const port = Number(process.env.PORT) || 4001;
+
+const startServer = async () => {
+  try {
+    await connection();
+    await seedCatalogDefaults();
+
+    app.listen(port, () => {
+      console.log(`Working on PORT: ${port}`);
+    });
+  } catch (err) {
+    console.error(`Unable to start server: ${err.message}`);
+    process.exitCode = 1;
+  }
+};
+
+startServer();
