@@ -4,9 +4,9 @@ import InventoryTransaction from "../model/InventoryTransaction.js";
 const cleanString = (value) => (typeof value === "string" ? value.trim() : "");
 
 const isValidPhone = (value) => {
-  if (!value) return true;
-  const digits = value.replace(/\D/g, "");
-  return digits.length >= 7 && digits.length <= 15;
+  return /^(09\d{2}[\s-]?\d{3}[\s-]?\d{4}|\+639\d{2}[\s-]?\d{3}[\s-]?\d{4})$/.test(
+    value,
+  );
 };
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -92,7 +92,15 @@ export const createSupplier = async (req, res) => {
     if (!isValidPhone(payload.phone)) {
       return res.status(400).json({
         success: false,
-        message: "Enter a valid phone number (7–15 digits)",
+        message:
+          "Enter a valid Philippine mobile number (09XXXXXXXXX or +639XXXXXXXXX)",
+      });
+    }
+
+    if (payload.address.length < 10) {
+      return res.status(400).json({
+        success: false,
+        message: "Supplier address must be at least 10 characters",
       });
     }
 
@@ -145,7 +153,15 @@ export const updateSupplier = async (req, res) => {
     if (!isValidPhone(payload.phone)) {
       return res.status(400).json({
         success: false,
-        message: "Enter a valid phone number (7–15 digits)",
+        message:
+          "Enter a valid Philippine mobile number (09XXXXXXXXX or +639XXXXXXXXX)",
+      });
+    }
+
+    if (payload.address.length < 10) {
+      return res.status(400).json({
+        success: false,
+        message: "Supplier address must be at least 10 characters",
       });
     }
 
