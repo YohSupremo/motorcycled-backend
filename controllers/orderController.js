@@ -1535,7 +1535,10 @@ export const getDashboardStats = async (req, res) => {
 
     // Financial totals across all time
     const completedOrders = allOrders.filter(
-      (o) => o.orderStatus === "completed" || o.paymentStatus === "paid"
+      (o) =>
+        o.orderStatus !== "canceled" &&
+        o.paymentStatus !== "refunded" &&
+        (o.orderStatus === "completed" || o.paymentStatus === "paid"),
     );
     const totalOrderSales = completedOrders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
 
