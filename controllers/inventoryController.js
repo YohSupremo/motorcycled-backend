@@ -42,73 +42,16 @@ const makeTransactionRef = () =>
 const performedByName = (user) =>
   [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() || "Admin";
 
-const parseDateRange = (dateFrom, dateTo) => {
-  const range = {};
-
-  if (dateFrom && !Number.isNaN(Date.parse(dateFrom))) {
-    range.$gte = new Date(dateFrom);
-  }
-
-  if (dateTo && !Number.isNaN(Date.parse(dateTo))) {
-    const end = new Date(dateTo);
-    if (/^\d{4}-\d{2}-\d{2}$/.test(String(dateTo))) {
-      end.setHours(23, 59, 59, 999);
-    }
-    range.$lte = end;
-  }
-
-  return range;
-};
-
 // GET /api/v1/admin/inventory/transactions
-// Optional filters: type, supplierId, productId, brandId, categoryId,
-// dateFrom, dateTo, limit
+// Optional filters: type, limit
 export const getInventoryTransactions = async (req, res) => {
   try {
-    const { type, supplierId, productId, brandId, categoryId, dateFrom, dateTo } =
-      req.query;
+    const { type } = req.query;
 
     const match = {};
 
     if (type && type !== "All" && type !== "all") {
       match.type = type;
-    }
-
-    if (supplierId) {
-      match.supplierId = cleanString(supplierId);
-    }
-
-    const productConditions = [];
-
-    if (productId && mongoose.isValidObjectId(productId)) {
-      productConditions.push({ product: new mongoose.Types.ObjectId(productId) });
-    }
-
-    if (
-      (brandId && mongoose.isValidObjectId(brandId)) ||
-      (categoryId && mongoose.isValidObjectId(categoryId))
-    ) {
-      const productFilter = {};
-      if (brandId && mongoose.isValidObjectId(brandId)) {
-        productFilter.brand = brandId;
-      }
-      if (categoryId && mongoose.isValidObjectId(categoryId)) {
-        productFilter.category = categoryId;
-      }
-
-      const productIds = await Product.find(productFilter).distinct("_id");
-      productConditions.push({ product: { $in: productIds } });
-    }
-
-    if (productConditions.length === 1) {
-      Object.assign(match, productConditions[0]);
-    } else if (productConditions.length > 1) {
-      match.$and = productConditions;
-    }
-
-    const dateRange = parseDateRange(dateFrom, dateTo);
-    if (Object.keys(dateRange).length > 0) {
-      match.createdAt = dateRange;
     }
 
     const limit = Math.min(Math.max(Number(req.query.limit) || 200, 1), 500);
