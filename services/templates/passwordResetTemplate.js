@@ -46,3 +46,18 @@ export const createPasswordResetTemplate = ({ customerName, resetUrl }) => `
 </body>
 </html>
 `;
+
+export const createPasswordResetText = ({ customerName, resetUrl }) => `
+Motorcycled - Password Reset Request
+
+Hi ${customerName},
+
+We received a request to reset the password for your Motorcycled account.
+
+Reset your password (valid for 15 minutes):
+${resetUrl}
+
+If you didn't request this, you can safely ignore this email. Your password will remain unchanged.
+
+© ${new Date().getFullYear()} MotorCycled Dealership
+`.trim();

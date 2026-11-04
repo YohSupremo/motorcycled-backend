@@ -91,7 +91,11 @@ export const sendOrderStatusEmail = async ({
 
   const subject = `Order ${order.orderNumber}: ${statusLabel}`;
 
-  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+  const frontendUrl =
+    process.env.FRONTEND_URL ||
+    (process.env.NODE_ENV === "production"
+      ? "https://motorcycled-frontend.onrender.com"
+      : "http://localhost:5173");
   const dateStr = new Date(order.createdAt || Date.now()).toLocaleDateString("en-PH", {
     year: "numeric",
     month: "short",

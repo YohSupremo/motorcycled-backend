@@ -8,7 +8,10 @@ import {
   sendOrderStatusEmail,
   sendPasswordResetEmail,
 } from "../services/emailService.js";
-import { createPasswordResetTemplate } from "../services/templates/passwordResetTemplate.js";
+import {
+  createPasswordResetTemplate,
+  createPasswordResetText,
+} from "../services/templates/passwordResetTemplate.js";
 
 const uploadHandler = (fileBuffer, folder) => {
   return new Promise((res, rej) => {
@@ -298,26 +301,16 @@ export const forgotPassword = async (req, res) => {
     user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 minutes
     await user.save({ validateBeforeSave: false });
 
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    const frontendUrl =
+      process.env.FRONTEND_URL ||
+      (process.env.NODE_ENV === "production"
+        ? "https://motorcycled-frontend.onrender.com"
+        : "http://localhost:5173");
     const resetUrl = `${frontendUrl}/password/reset/${resetToken}`;
 
     const customerName = `${user.firstName || "Rider"} ${user.lastName || ""}`.trim();
     const htmlContent = createPasswordResetTemplate({ customerName, resetUrl });
-
-    const textContent = `
-Motorcycled - Password Reset Request
-
-Hi ${customerName},
-
-We received a request to reset the password for your Motorcycled account.
-
-Reset your password (valid for 15 minutes):
-${resetUrl}
-
-If you didn't request this, you can safely ignore this email. Your password will remain unchanged.
-
-© ${new Date().getFullYear()} MotorCycled Dealership
-    `.trim();
+    const textContent = createPasswordResetText({ customerName, resetUrl });
 
     try {
       await sendPasswordResetEmail({
