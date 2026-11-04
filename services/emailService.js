@@ -1,42 +1,35 @@
-import nodemailer from "nodemailer";
 import path from "path";
 import fs from "fs";
+import { getPreviewUrl, getTransporter } from "../config/email.js";
 
-/**
- * Creates and returns a nodemailer transporter.
- * Uses environment variables or creates an Ethereal test account if credentials are empty.
- */
-const getTransporter = async () => {
-  const host = process.env.SMTP_HOST || "sandbox.smtp.mailtrap.io";
-  const port = Number(process.env.SMTP_PORT) || 2525;
-  const user = process.env.SMTP_EMAIL || process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASSWORD || process.env.SMTP_PASS;
+export const sendPasswordResetEmail = async ({
+  recipientEmail,
+  textContent,
+  htmlContent,
+}) => {
+  const transporter = await getTransporter();
 
-  if (user && pass) {
-    return nodemailer.createTransport({
-      host,
-      port,
-      auth: { user, pass },
-    });
+  if (!transporter) {
+    throw new Error("Email transporter is unavailable");
   }
 
-  // If credentials are blank in .env, attempt to use Ethereal or return null
-  try {
-    const testAccount = await nodemailer.createTestAccount();
-    console.log("[EmailService] Using temporary Ethereal SMTP test account:", testAccount.user);
-    return nodemailer.createTransport({
-      host: "smtp.ethereal.email",
-      port: 587,
-      secure: false,
-      auth: {
-        user: testAccount.user,
-        pass: testAccount.pass,
-      },
-    });
-  } catch (err) {
-    console.warn("[EmailService] Ethereal fallback failed, email will be logged to console:", err.message);
-    return null;
+  const mailOptions = {
+    from: `"${process.env.SMTP_FROM_NAME || "MotorCycled Dealership"}" <${process.env.SMTP_FROM_EMAIL || "noreply@motorcycled.ph"}>`,
+    to: recipientEmail,
+    subject: "Motorcycled - Reset your password",
+    text: textContent,
+    html: htmlContent,
+  };
+
+  const info = await transporter.sendMail(mailOptions);
+  console.log(`[EmailService] Password reset email sent to ${recipientEmail}: ${info.messageId}`);
+
+  const previewUrl = getPreviewUrl(info);
+  if (previewUrl) {
+    console.log(`[EmailService] Preview: ${previewUrl}`);
   }
+
+  return info;
 };
 
 /**
@@ -462,7 +455,7 @@ MotorCycled Dealership Operations
     const info = await transporter.sendMail(mailOptions);
     console.log(`[EmailService] Email sent to ${recipientEmail}: ${info.messageId}`);
 
-    const previewUrl = nodemailer.getTestMessageUrl(info);
+    const previewUrl = getPreviewUrl(info);
     if (previewUrl) {
       console.log(`[EmailService] View preview at: ${previewUrl}`);
     }
