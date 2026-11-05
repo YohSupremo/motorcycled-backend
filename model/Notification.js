@@ -49,6 +49,7 @@ const notificationSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isArchived: { type: Boolean, default: false, index: true },
   },
   { timestamps: true }
 );

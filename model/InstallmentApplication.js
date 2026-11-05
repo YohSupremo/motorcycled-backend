@@ -118,6 +118,7 @@ const installmentApplicationSchema = new mongoose.Schema(
         installmentNumber: { type: Number },
       },
     ],
+    isArchived: { type: Boolean, default: false, index: true },
   },
   { timestamps: true },
 );

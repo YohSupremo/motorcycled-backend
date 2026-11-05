@@ -87,6 +87,7 @@ const orderSchema = new mongoose.Schema(
     },
     paidAt: { type: Date },
     deliveredAt: { type: Date },
+    isArchived: { type: Boolean, default: false, index: true },
   },
   { timestamps: true },
 );

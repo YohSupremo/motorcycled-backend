@@ -61,6 +61,7 @@ const inventoryTransactionSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    isArchived: { type: Boolean, default: false, index: true },
   },
   { timestamps: true },
 );

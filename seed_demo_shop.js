@@ -64,6 +64,26 @@ const salePlan = [
   [11, 3, 1],
   [6, 18, 1],
   [2, 19, 2],
+  [86, 17, 1],
+  [80, 0, 1],
+  [73, 0, 1],
+  [66, 0, 1],
+  [59, 1, 1],
+  [52, 1, 1],
+  [45, 1, 1],
+  [38, 2, 1],
+  [31, 2, 1],
+  [24, 3, 1],
+  [18, 4, 1],
+  [14, 5, 1],
+  [10, 6, 1],
+  [8, 7, 1],
+  [5, 8, 1],
+  [4, 9, 1],
+  [3, 10, 1],
+  [1, 11, 1],
+  [7, 12, 1],
+  [12, 13, 1],
 ];
 
 const dateDaysAgo = (days, hour = 10) => {
@@ -73,8 +93,8 @@ const dateDaysAgo = (days, hour = 10) => {
   return date;
 };
 
-const makeReference = (prefix, index) =>
-  `${prefix}-DEMO-${String(index + 1).padStart(3, "0")}`;
+const makeReference = (prefix, runId, index) =>
+  `${prefix}-DEMO-${runId}-${String(index + 1).padStart(3, "0")}`;
 
 const getOrCreateLookup = async (Model, names) => {
   const documents = [];
@@ -117,32 +137,51 @@ const seedDemoShop = async () => {
   const customers = users.length > 0 ? users : [admin];
   const categories = await getOrCreateLookup(Category, categoryNames);
   const brands = await getOrCreateLookup(Brand, brandNames);
+  const runId = Date.now().toString(36).toUpperCase();
 
   await resetShopData();
 
-  const suppliers = await Supplier.insertMany([
-    {
-      name: "MotoHub Wholesale Supply",
-      contactPerson: "Ariel Santos",
-      email: "supply@motohub.example",
-      phone: "09170000001",
-      address: "Quezon City, Metro Manila",
-    },
-    {
-      name: "RiderPro Distribution",
-      contactPerson: "Bea Cruz",
-      email: "orders@riderpro.example",
-      phone: "09170000002",
-      address: "Makati City, Metro Manila",
-    },
-    {
-      name: "OEM Drive Philippines",
-      contactPerson: "Carlo Reyes",
-      email: "sales@oemdrive.example",
-      phone: "09170000003",
-      address: "Pasig City, Metro Manila",
-    },
-  ]);
+  const supplierNames = [
+    "MotoHub Wholesale Supply",
+    "RiderPro Distribution",
+    "OEM Drive Philippines",
+    "Metro Moto Parts",
+    "RoadReady Trading",
+    "Prime Gear Depot",
+    "Velocity Motor Supply",
+    "Urban Rider Wholesale",
+    "Apex OEM Imports",
+    "Northstar Moto Supply",
+    "Southline Parts Trading",
+    "MotoWorks Distribution",
+    "GearGrid Philippines",
+    "TorqueHouse Supply",
+    "RideSafe Essentials",
+    "TwoWheel Depot",
+    "MotoCore Wholesale",
+    "Piston and Chain Trading",
+    "StreetSpec Supply",
+    "Island Moto Imports",
+  ];
+  const suppliers = [];
+  for (const [index, name] of supplierNames.entries()) {
+    suppliers.push(
+      await Supplier.findOneAndUpdate(
+        { name },
+        {
+          $set: {
+            name,
+            contactPerson: `Supplier Contact ${index + 1}`,
+            email: `supplier${index + 1}@demo.example`,
+            phone: `0917000${String(index + 1).padStart(4, "0")}`,
+            address: "Metro Manila, Philippines",
+            deletedAt: null,
+          },
+        },
+        { new: true, upsert: true, setDefaultsOnInsert: true },
+      ),
+    );
+  }
 
   const productRows = productDefinitions.map(
     ([name, categoryName, brandName, price, costPrice, initialStock]) => ({
@@ -166,7 +205,7 @@ const seedDemoShop = async () => {
   const products = await Product.insertMany(productRows);
 
   const restockTransactions = products.map((product, index) => ({
-    transactionRef: makeReference("TXN-RESTOCK", index),
+    transactionRef: makeReference("TXN-RESTOCK", runId, index),
     product: product._id,
     productName: product.name,
     type: "restock",
@@ -202,7 +241,7 @@ const seedDemoShop = async () => {
     const product = products[productIndex];
     const customer = customers[saleIndex % customers.length];
     const createdAt = dateDaysAgo(daysAgo, 11 + (saleIndex % 6));
-    const orderNumber = `MC-DEMO-${String(saleIndex + 1).padStart(3, "0")}`;
+    const orderNumber = `MC-DEMO-${runId}-${String(saleIndex + 1).padStart(3, "0")}`;
 
     orders.push({
       orderNumber,
@@ -243,7 +282,7 @@ const seedDemoShop = async () => {
     });
 
     saleTransactions.push({
-      transactionRef: makeReference("TXN-SALE", saleIndex),
+      transactionRef: makeReference("TXN-SALE", runId, saleIndex),
       product: product._id,
       productName: product.name,
       type: "sale",
@@ -258,10 +297,61 @@ const seedDemoShop = async () => {
     });
   }
 
-  await Order.insertMany(orders);
+  const insertedOrders = await Order.insertMany(orders);
   await InventoryTransaction.insertMany(saleTransactions);
 
-  console.log(`Seeded ${products.length} products, ${suppliers.length} suppliers, and ${orders.length} completed sales.`);
+  const reviewTemplates = [
+    ["Great purchase", "The product arrived in excellent condition and matched the listing."],
+    ["Good value", "The quality is good for the price and the buying process was smooth."],
+    ["Would recommend", "Everything was ready for pickup and the product performs as expected."],
+    ["Solid quality", "The item feels durable and the dealership support was helpful."],
+    ["Happy with it", "The product matched the description and was easy to purchase."],
+  ];
+
+  const reviews = [];
+  const reviewKeys = new Set();
+  for (const [index, order] of insertedOrders.entries()) {
+    if (reviews.length >= 20) break;
+    const item = order.orderItems[0];
+    const reviewKey = `${order.user.toString()}-${item.product.toString()}`;
+    if (reviewKeys.has(reviewKey)) continue;
+    reviewKeys.add(reviewKey);
+    const [title, comment] = reviewTemplates[index % reviewTemplates.length];
+    const reviewedAt = new Date(order.createdAt);
+    reviewedAt.setDate(reviewedAt.getDate() + 1);
+
+    reviews.push({
+      product: item.product,
+      user: order.user,
+      order: order._id,
+      rating: 4 + (index % 2),
+      title,
+      comment,
+      isVerifiedPurchase: true,
+      isHidden: false,
+      seedId: `demo-review-${runId}-${String(index + 1).padStart(3, "0")}`,
+      createdAt: reviewedAt,
+      updatedAt: reviewedAt,
+    });
+  }
+  await Review.insertMany(reviews);
+
+  for (const product of products) {
+    const productReviews = reviews.filter(
+      (review) => review.product.toString() === product._id.toString(),
+    );
+    if (productReviews.length === 0) continue;
+
+    product.ratings =
+      productReviews.reduce((sum, review) => sum + review.rating, 0) /
+      productReviews.length;
+    product.numOfReviews = productReviews.length;
+    await product.save();
+  }
+
+  console.log(
+    `Seeded ${products.length} products, ${suppliers.length} suppliers, ${insertedOrders.length} completed sales, and ${reviews.length} verified reviews.`,
+  );
   console.log(`Preserved ${await User.countDocuments()} existing user accounts.`);
 };
 

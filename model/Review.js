@@ -55,6 +55,7 @@ const reviewSchema = new mongoose.Schema(
       unique: true,
       sparse: true,
     },
+    isArchived: { type: Boolean, default: false, index: true },
   },
   { timestamps: true },
 );
