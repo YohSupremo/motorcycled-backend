@@ -318,20 +318,3 @@ export const toggleReviewVisibility = asyncHandler(async (req, res) => {
     review,
   });
 });
-
-// ─── ADMIN: DELETE REVIEW ─────────────────────────────────────────────────────
-// DELETE /api/v1/admin/review/:id
-export const deleteReview = asyncHandler(async (req, res) => {
-  const review = await Review.findById(req.params.id);
-  if (!review) {
-    return res
-      .status(404)
-      .json({ success: false, message: "Review not found" });
-  }
-
-  const productId = review.product;
-  await review.deleteOne();
-  await recomputeProductRating(productId);
-
-  return res.status(200).json({ success: true, message: "Review deleted" });
-});

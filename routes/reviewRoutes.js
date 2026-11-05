@@ -7,7 +7,6 @@ import {
   deleteMyReview,
   getAllReviews,
   toggleReviewVisibility,
-  deleteReview,
 } from "../controllers/reviewController.js";
 import { auth, authorizeRoles } from "../middleware/authMiddleware.js";
 
@@ -31,13 +30,6 @@ router.put(
   auth,
   authorizeRoles("admin"),
   toggleReviewVisibility,
-);
-
-router.delete(
-  "/admin/review/:id",
-  auth,
-  authorizeRoles("admin"),
-  deleteReview,
 );
 
 export default router;
