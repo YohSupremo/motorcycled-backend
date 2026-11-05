@@ -1,6 +1,7 @@
 import PDFDocument from "pdfkit";
 import path from "path";
 import fs from "fs";
+import { getStoreTaxRate } from "../utils/tax.js";
 
 /**
  * Generate a PDF invoice/receipt Buffer for an order.
@@ -8,7 +9,9 @@ import fs from "fs";
  * @param {Object} user - Customer User document or object
  * @returns {Promise<Buffer>}
  */
-export const generateOrderInvoicePDF = (order, user = {}) => {
+export const generateOrderInvoicePDF = async (order, user = {}) => {
+  const taxRate = await getStoreTaxRate();
+
   return new Promise((resolve, reject) => {
     try {
       const doc = new PDFDocument({
@@ -146,7 +149,7 @@ export const generateOrderInvoicePDF = (order, user = {}) => {
 
       // ─── Totals Section ─────────────────────────────────────────────────────
       const totalsY = rowY + 16;
-      const vat = (order.itemsPrice || 0) * 0.12;
+      const vat = (order.itemsPrice || 0) * (taxRate / 100);
 
       const totalsBoxX = 330;
       const totalsBoxWidth = 225;
@@ -165,7 +168,7 @@ export const generateOrderInvoicePDF = (order, user = {}) => {
         order.shippingPrice > 0 ? formatPHP(order.shippingPrice) : "FREE (PHP 0.00)",
         totalsY + 16
       );
-      renderTotalRow("VAT (12% Included):", formatPHP(vat), totalsY + 32);
+      renderTotalRow(`VAT (${taxRate}% Included):`, formatPHP(vat), totalsY + 32);
 
       // Line before total
       doc.strokeColor("#18181b").lineWidth(1.5).moveTo(totalsBoxX, totalsY + 48).lineTo(555, totalsY + 48).stroke();

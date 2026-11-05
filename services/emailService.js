@@ -1,6 +1,7 @@
 import path from "path";
 import fs from "fs";
 import { getPreviewUrl, getTransporter } from "../config/email.js";
+import { getStoreTaxRate } from "../utils/tax.js";
 
 export const sendPasswordResetEmail = async ({
   recipientEmail,
@@ -170,7 +171,8 @@ export const sendOrderStatusEmail = async ({
     .map((i) => `  • ${i.quantity}x ${i.name} — ${formatPHP(i.price * i.quantity)}`)
     .join("\n");
 
-  const vat = (order.itemsPrice || 0) * 0.12;
+  const taxRate = await getStoreTaxRate();
+  const vat = (order.itemsPrice || 0) * (taxRate / 100);
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -324,7 +326,7 @@ export const sendOrderStatusEmail = async ({
                   </td>
                 </tr>
                 <tr>
-                  <td style="padding: 4px 0; font-size: 12.5px; color: #71717a;">VAT (12% Included)</td>
+                  <td style="padding: 4px 0; font-size: 12.5px; color: #71717a;">VAT (${taxRate}% Included)</td>
                   <td style="padding: 4px 0; font-size: 12px; text-align: right; font-family: -apple-system, BlinkMacSystemFont, 'SF Mono', Consolas, monospace; color: #71717a;">${formatPHP(vat)}</td>
                 </tr>
                 <tr>

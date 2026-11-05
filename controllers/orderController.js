@@ -12,6 +12,7 @@ import { notifyOrderPlaced, notifyInstallmentUpdate, sendNotification } from "..
 import { generateOrderInvoicePDF } from "../services/pdfService.js";
 import { sendOrderStatusEmail } from "../services/emailService.js";
 import { runInTransaction } from "../utils/transaction.js";
+import { getStoreTaxRate } from "../utils/tax.js";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -1262,7 +1263,8 @@ export const getOrderReceipt = async (req, res) => {
       )
       .join("");
 
-    const vat = order.itemsPrice * 0.12;
+    const taxRate = await getStoreTaxRate();
+    const vat = order.itemsPrice * (taxRate / 100);
 
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -1348,7 +1350,7 @@ export const getOrderReceipt = async (req, res) => {
         <td style="text-align: right; font-family: monospace; font-weight: 600;">${order.shippingPrice > 0 ? `₱${order.shippingPrice.toFixed(2)}` : 'FREE (₱0.00)'}</td>
       </tr>
       <tr>
-        <td style="color: #71717a;">VAT (12% Included):</td>
+        <td style="color: #71717a;">VAT (${taxRate}% Included):</td>
         <td style="text-align: right; font-family: monospace; color: #71717a;">₱${vat.toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
       </tr>
       <tr style="border-top: 2px solid #18181b;">
