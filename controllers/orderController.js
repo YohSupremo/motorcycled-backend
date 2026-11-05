@@ -350,40 +350,48 @@ export const newCheckout = async (req, res) => {
         }
       }
 
-      // ── 5. Create individual Orders for cash motorcycle purchases ───────────
-      for (const mi of motorcycleCashItems) {
-        const updated = await Product.findOneAndUpdate(
-          { _id: mi.product._id, stock: { $gte: mi.quantity } },
-          { $inc: { stock: -mi.quantity } },
-          { new: true, session },
-        );
+      // ── 5. Create one Order for all cash motorcycle purchases ───────────────
+      // Motorcycles must be released together from the dealership, so multiple
+      // motorcycle lines in one checkout share one order and one receipt.
+      if (motorcycleCashItems.length > 0) {
+        const orderItems = [];
 
-        if (!updated) {
-          throw new HttpError(
-            `"${mi.product.name}" no longer has enough stock.`,
-            409,
-            { productId: mi.product._id.toString(), productName: mi.product.name },
+        for (const mi of motorcycleCashItems) {
+          const updated = await Product.findOneAndUpdate(
+            { _id: mi.product._id, stock: { $gte: mi.quantity } },
+            { $inc: { stock: -mi.quantity } },
+            { new: true, session },
           );
+
+          if (!updated) {
+            throw new HttpError(
+              `"${mi.product.name}" no longer has enough stock.`,
+              409,
+              { productId: mi.product._id.toString(), productName: mi.product.name },
+            );
+          }
+
+          orderItems.push({
+            product: mi.product._id,
+            name: mi.product.name,
+            quantity: mi.quantity,
+            price: mi.product.price,
+            costPrice: Number(mi.product.costPrice || 0),
+            image: mi.product.images?.[0]?.url || "",
+            itemType: mi.itemType,
+          });
         }
 
-        const itemsPrice = mi.product.price * mi.quantity;
-        // Motorcycles are always picked up from dealership for delivery coordination;
-        // use shippingPrice = 0 for motorcycles (dealership standard).
+        const itemsPrice = orderItems.reduce(
+          (sum, item) => sum + item.price * item.quantity,
+          0,
+        );
+        // Motorcycles are always picked up from the dealership for release and PDI.
         const isCod = isCashOnDeliveryMethod(paymentMethod);
         const motoOrder = new Order({
           checkoutSessionId,
           user: req.user._id,
-          orderItems: [
-            {
-              product: mi.product._id,
-              name: mi.product.name,
-              quantity: mi.quantity,
-              price: mi.product.price,
-              costPrice: Number(mi.product.costPrice || 0),
-              image: mi.product.images?.[0]?.url || "",
-              itemType: mi.itemType,
-            },
-          ],
+          orderItems,
           shippingInfo: motorcycleShippingInfo,
           paymentMethod,
           paymentDetails: paymentDetails || {},
@@ -397,31 +405,33 @@ export const newCheckout = async (req, res) => {
         orders.push(motoOrder);
 
         const customerName = performedByName(req.user);
-        await InventoryTransaction.create(
-          [
-            {
-              transactionRef: makeTransactionRef("TXN-SALE"),
-              product: mi.product._id,
-              productName: mi.product.name,
-              type: "sale",
-              quantityChange: -mi.quantity,
-              orderRef: motoOrder.orderNumber,
-              unitCost: Number(mi.product.costPrice || 0),
-              performedBy: req.user._id,
-              performedByName: customerName,
-              note: `Motorcycle purchase via Order #${motoOrder.orderNumber}`,
-            },
-          ],
-          { session },
-        );
+        for (const item of orderItems) {
+          await InventoryTransaction.create(
+            [
+              {
+                transactionRef: makeTransactionRef("TXN-SALE"),
+                product: item.product,
+                productName: item.name,
+                type: "sale",
+                quantityChange: -item.quantity,
+                orderRef: motoOrder.orderNumber,
+                unitCost: Number(item.costPrice || 0),
+                performedBy: req.user._id,
+                performedByName: customerName,
+                note: `Motorcycle purchase via Order #${motoOrder.orderNumber}`,
+              },
+            ],
+            { session },
+          );
 
-        transactionResults.push({
-          productId: mi.product._id.toString(),
-          productName: mi.product.name,
-          status: "success",
-          type: "order",
-          reference: motoOrder.orderNumber,
-        });
+          transactionResults.push({
+            productId: item.product.toString(),
+            productName: item.name,
+            status: "success",
+            type: "order",
+            reference: motoOrder.orderNumber,
+          });
+        }
       }
 
       // ── 6. Create InstallmentApplications (no stock deduction, no payment collected) ──
