@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
-// Suppliers for inventory acquisition (FR1.6.2 — Supplier Details).
-// Deactivation is a soft delete so restock history remains auditable.
+
+
 const supplierSchema = new mongoose.Schema(
   {
     name: {

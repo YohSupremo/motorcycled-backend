@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
-// 4.3 categories — from motorcycled-ref-database.pdf Section 4.3
-// Examples: Motorcycles, Engine Parts, Brakes, Tires and Wheels, Helmets, Riding Gear, Accessories, Lubricants
+
+
 const categorySchema = new mongoose.Schema(
   {
     name: {

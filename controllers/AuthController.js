@@ -32,7 +32,7 @@ const isProd = process.env.NODE_ENV?.trim().toLowerCase() === "production";
 const DUMMY_PASSWORD_HASH =
   "$2b$10$7EqJtq98hPqEX7fNZaFWoOeYc4v5v5yQbO5B5H4a2B8h8Z9d9W6aK";
 
-// Sign a JWT and send it as an httpOnly cookie, together with the user.
+
 const sendToken = async (user, statusCode, res) => {
   const token = user.getJWTToken();
   const address = await Address.findOne({ userId: user._id }).lean();
@@ -150,7 +150,7 @@ export const login = async (req, res) => {
       });
     }
 
-    // Allow logging in with either the email or the contact number.
+    
     const user = await User.findOne({
       $or: [{ email }, { contactNumber: email }],
     });
@@ -251,7 +251,7 @@ export const logout = (_req, res) => {
   });
 };
 
-// Returns the currently authenticated user (set by the auth middleware).
+
 export const getUserProfile = async (req, res) => {
   try {
     const address = await Address.findOne({ userId: req.user._id }).lean();
@@ -298,7 +298,7 @@ export const forgotPassword = async (req, res) => {
       .digest("hex");
 
     user.resetPasswordToken = resetPasswordToken;
-    user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 minutes
+    user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; 
     await user.save({ validateBeforeSave: false });
 
     const frontendUrl =
@@ -461,10 +461,7 @@ export const changePassword = async (req, res) => {
   }
 };
 
-/**
- * Quiz 4 (15 pts): Social login handler (Firebase / Google / Facebook)
- * Authenticates or automatically creates customer account using Firebase credentials
- */
+
 export const firebaseLogin = async (req, res) => {
   try {
     const authorization = req.headers.authorization || "";
@@ -535,7 +532,7 @@ export const firebaseLogin = async (req, res) => {
       });
     }
 
-    // Existing user: sign token and log in
+    
     return await sendToken(user, 200, res);
   } catch (error) {
     console.error("Firebase authentication error:", error);

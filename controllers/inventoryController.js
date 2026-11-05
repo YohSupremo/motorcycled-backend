@@ -42,8 +42,8 @@ const makeTransactionRef = () =>
 const performedByName = (user) =>
   [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() || "Admin";
 
-// GET /api/v1/admin/inventory/transactions
-// Optional filters: type, limit
+
+
 export const getInventoryTransactions = async (req, res) => {
   try {
     const { type } = req.query;
@@ -93,8 +93,8 @@ export const getInventoryTransactions = async (req, res) => {
   }
 };
 
-// POST /api/v1/admin/inventory/restock
-// Legacy single-line restock endpoint. Kept for compatibility.
+
+
 export const createRestock = async (req, res) => {
   try {
     const {
@@ -187,9 +187,9 @@ export const createRestock = async (req, res) => {
   }
 };
 
-// POST /api/v1/admin/inventory/bulk-restock
-// Body: { referenceNo, restocks: [{ productId, supplierId, quantity, unitCost, note }] }
-// All lines commit in one MongoDB transaction, or none do.
+
+
+
 export const bulkRestock = async (req, res) => {
   try {
     const { referenceNo } = req.body;

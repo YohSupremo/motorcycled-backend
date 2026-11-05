@@ -4,12 +4,12 @@ import Category from "../model/Category.js";
 import Brand from "../model/Brand.js";
 import { cloudConf } from "../config/cloudinary.js";
 import InventoryTransaction from "../model/InventoryTransaction.js";
-// Helper: Escape special regex characters in user search inputs
+
 const escapeRegex = (value) =>
   typeof value === "string" ? value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") : "";
 
-// Helper: Upload a single Base64 data URL to Cloudinary.
-// Reference: itcp318-s3a-2026/backend/controllers/product.js lines 31-35
+
+
 const uploadToCloudinary = (dataUrl) =>
   cloudConf.uploader.upload(dataUrl, {
     folder: "motorshop/products",
@@ -17,14 +17,14 @@ const uploadToCloudinary = (dataUrl) =>
     crop: "limit",
   });
 
-// Helper: Delete a single asset from Cloudinary by publicId.
-// Reference: itcp318-s3a-2026 adaptation for cleanup on delete/update
+
+
 const destroyFromCloudinary = (publicId) =>
   cloudConf.uploader.destroy(publicId);
 
-// ─── ADMIN: CREATE ────────────────────────────────────────────────────────────
-// POST /api/v1/admin/product/new
-// Reference: itcp318-s3a-2026/backend/controllers/product.js → newProduct (lines 6-64)
+
+
+
 export const newProduct = async (req, res) => {
   try {
     const { name, brand, category, price } = req.body;
@@ -42,7 +42,7 @@ export const newProduct = async (req, res) => {
       return res.status(400).json({ success: false, message: "Please enter a valid price" });
     }
 
-    // Guard against rapid duplicate submissions
+    
     const existing = await Product.findOne({
       name: { $regex: new RegExp(`^${escapeRegex(name.trim())}$`, "i") },
       brand,
@@ -56,15 +56,15 @@ export const newProduct = async (req, res) => {
 
     let images = [];
 
-    // Collect Base64 data URLs sent from frontend FileReader
-    // Reference: itcp318-s3a-2026/backend/controllers/product.js lines 15-18
+    
+    
     if (typeof req.body.images === "string") {
       images.push(req.body.images);
     } else if (Array.isArray(req.body.images)) {
       images = req.body.images;
     }
 
-    // Upload each image to Cloudinary, collect { url, publicId }
+    
     const imagesLinks = [];
     for (const image of images) {
       try {
@@ -80,7 +80,7 @@ export const newProduct = async (req, res) => {
 
     req.body.name = name.trim();
     req.body.images = imagesLinks;
-    // Reference: itcp318-s3a-2026/backend/controllers/product.js line 49
+    
     req.body.user = req.user._id;
 
     const product = await Product.create(req.body);
@@ -99,9 +99,9 @@ export const newProduct = async (req, res) => {
   }
 };
 
-// ─── ADMIN: GET ALL PRODUCTS ──────────────────────────────────────────────────
-// GET /api/v1/admin/products
-// Reference: itcp318-s3a-2026/backend/controllers/product.js → getAdminProducts (lines 114-128)
+
+
+
 export const getAdminProducts = async (req, res) => {
   const products = await Product.find()
     .populate("category", "name")
@@ -115,9 +115,9 @@ export const getAdminProducts = async (req, res) => {
   return res.status(200).json({ success: true, products });
 };
 
-// ─── PUBLIC: GET SINGLE PRODUCT ───────────────────────────────────────────────
-// GET /api/v1/product/:id
-// Reference: itcp318-s3a-2026/backend/controllers/product.js → getSingleProduct (lines 100-112)
+
+
+
 export const getSingleProduct = async (req, res) => {
   const product = await Product.findById(req.params.id)
     .populate("category", "name description")
@@ -130,9 +130,9 @@ export const getSingleProduct = async (req, res) => {
   return res.status(200).json({ success: true, product });
 };
 
-// ─── ADMIN: UPDATE ────────────────────────────────────────────────────────────
-// PUT /api/v1/admin/product/:id
-// Reference: itcp318-s3a-2026/backend/controllers/product.js → updateProduct (lines 129-176)
+
+
+
 export const updateProduct = async (req, res) => {
   let product = await Product.findById(req.params.id);
 
@@ -140,13 +140,13 @@ export const updateProduct = async (req, res) => {
     return res.status(404).json({ success: false, message: "Product not found" });
   }
 
-  // Track stock changes for inventory adjustment logging
+  
   const oldStock = Number(product.stock || 0);
   const incomingStock = req.body.stock !== undefined ? Number(req.body.stock) : oldStock;
   const stockChanged = req.body.stock !== undefined && incomingStock !== oldStock;
   const stockDiff = stockChanged ? incomingStock - oldStock : 0;
 
-  // Process images if provided in request
+  
   if (req.body.images !== undefined) {
     let rawImages = [];
     if (typeof req.body.images === "string") {
@@ -158,7 +158,7 @@ export const updateProduct = async (req, res) => {
     const finalImages = [];
     for (const item of rawImages) {
       if (typeof item === "string" && item.startsWith("data:")) {
-        // New Base64 image -> upload to Cloudinary
+        
         try {
           const result = await uploadToCloudinary(item);
           finalImages.push({
@@ -169,13 +169,13 @@ export const updateProduct = async (req, res) => {
           console.error("Cloudinary upload error:", err);
         }
       } else if (item && typeof item === "object" && item.url && item.publicId) {
-        // Preserved existing image object
+        
         finalImages.push({
           url: item.url,
           publicId: item.publicId,
         });
       } else if (typeof item === "string" && item.startsWith("http")) {
-        // Existing image URL
+        
         const matched = product.images.find((img) => img.url === item);
         if (matched) {
           finalImages.push({
@@ -186,7 +186,7 @@ export const updateProduct = async (req, res) => {
       }
     }
 
-    // Clean up removed images from Cloudinary
+    
     const keptPublicIds = new Set(finalImages.map((img) => img.publicId));
     for (const oldImg of product.images) {
       if (!keptPublicIds.has(oldImg.publicId)) {
@@ -208,7 +208,7 @@ export const updateProduct = async (req, res) => {
     .populate("category", "name")
     .populate("brand", "name");
 
-  // Log inventory adjustment if stock changed
+  
   if (stockChanged && stockDiff !== 0) {
     try {
       const makeTransactionRef = () =>
@@ -238,9 +238,9 @@ export const updateProduct = async (req, res) => {
   return res.status(200).json({ success: true, product });
 };
 
-// ─── ADMIN: SOFT-DELETE PRODUCT ──────────────────────────────────────────────
-// DELETE /api/v1/admin/product/:id
-// Soft delete: sets isArchived to true, preserves MongoDB document and Cloudinary media
+
+
+
 export const deleteProduct = async (req, res) => {
   const product = await Product.findById(req.params.id);
 
@@ -259,9 +259,9 @@ export const deleteProduct = async (req, res) => {
   });
 };
 
-// ─── ADMIN: TOGGLE ARCHIVE ───────────────────────────────────────────────────
-// PATCH /api/v1/admin/product/:id/archive
-// PDF §4.5: isArchived flag — archive instead of hard-delete (PDF §1 Design Principles #5)
+
+
+
 export const toggleArchiveProduct = async (req, res) => {
   const product = await Product.findById(req.params.id);
 
@@ -279,8 +279,8 @@ export const toggleArchiveProduct = async (req, res) => {
   });
 };
 
-// ─── ADMIN: BULK SOFT-DELETE PRODUCTS ─────────────────────────────────────────
-// POST /api/v1/admin/products/bulk-delete
+
+
 export const bulkDeleteProducts = async (req, res) => {
   try {
     const { productIds } = req.body;
@@ -311,8 +311,8 @@ export const bulkDeleteProducts = async (req, res) => {
   }
 };
 
-// ─── ADMIN: BULK RESTORE PRODUCTS ───────────────────────────────────────────
-// POST /api/v1/admin/products/bulk-restore
+
+
 export const bulkRestoreProducts = async (req, res) => {
   try {
     const { productIds } = req.body;
@@ -343,20 +343,20 @@ export const bulkRestoreProducts = async (req, res) => {
   }
 };
 
-// ─── PUBLIC: GET PRODUCTS (Storefront) ───────────────────────────────────────
-// GET /api/v1/products
-// Supports: keyword search, category, brand, price range, pagination
-// Reference: itcp318-s3a-2026/backend/controllers/product.js → getProducts (lines 66-98)
-// & itcp318-s3a-2026/backend/utils/apiFeatures.js
+
+
+
+
+
 export const getProducts = async (req, res) => {
   const resPerPage = Number(req.query.limit) || 12;
   const currentPage = Number(req.query.page) || 1;
   const skip = resPerPage * (currentPage - 1);
 
-  // Build query filter
+  
   const filter = { isArchived: { $ne: true } };
 
-  // Keyword search (Reference: apiFeatures.js regex on name, extended to description)
+  
   if (req.query.keyword && req.query.keyword.trim() !== "") {
     const kw = escapeRegex(req.query.keyword.trim());
     filter.$or = [
@@ -366,7 +366,7 @@ export const getProducts = async (req, res) => {
     ];
   }
 
-  // Category filter: handles both ObjectId and category name (e.g. "Brakes")
+  
   if (req.query.category && req.query.category !== "All") {
     if (mongoose.Types.ObjectId.isValid(req.query.category)) {
       filter.category = req.query.category;
@@ -378,7 +378,7 @@ export const getProducts = async (req, res) => {
     }
   }
 
-  // Brand filter: handles both ObjectId and brand name (e.g. "Yamaha")
+  
   if (req.query.brand && req.query.brand !== "All") {
     if (mongoose.Types.ObjectId.isValid(req.query.brand)) {
       filter.brand = req.query.brand;
@@ -390,12 +390,12 @@ export const getProducts = async (req, res) => {
     }
   }
 
-  // Installment filter
+  
   if (req.query.onlyInstallment === "true" || req.query.onlyInstallment === true) {
     filter.installmentEligible = true;
   }
 
-  // Price range filter (Supports price[gte], price[lte], minPrice, maxPrice)
+  
   if (
     req.query["price[gte]"] !== undefined ||
     req.query["price[lte]"] !== undefined ||
@@ -409,7 +409,7 @@ export const getProducts = async (req, res) => {
     if (maxP !== undefined && maxP !== "") filter.price.$lte = Number(maxP);
   }
 
-  // Ratings filter (e.g. 2 stars and below)
+  
   if (req.query.ratings || req.query["ratings[gte]"]) {
     const maxRating = Number(req.query.ratings || req.query["ratings[gte]"]);
     if (!isNaN(maxRating) && maxRating > 0) {
@@ -417,7 +417,7 @@ export const getProducts = async (req, res) => {
     }
   }
 
-  // Review filter (MP2: 5pts - Filter products with reviews / only reviewed products)
+  
   if (
     req.query.hasReviews === "true" ||
     req.query.onlyReviewed === "true" ||
@@ -431,7 +431,7 @@ export const getProducts = async (req, res) => {
     }
   }
 
-  // Featured filter (Homepage curated showcase)
+  
   if (
     req.query.isFeatured === "true" ||
     req.query.featured === "true" ||
@@ -458,8 +458,8 @@ export const getProducts = async (req, res) => {
   });
 };
 
-// ─── ADMIN: TOGGLE FEATURED STATUS ───────────────────────────────────────────
-// PATCH /api/v1/admin/product/:id/feature
+
+
 export const toggleFeatureProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);

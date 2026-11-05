@@ -12,11 +12,11 @@ import { auth, authorizeRoles } from "../middleware/authMiddleware.js";
 
 const router = Router();
 
-// Public routes
+
 router.get("/categories", getCategories);
 router.get("/category/:id", getSingleCategory);
 
-// Admin Category routes
+
 router.post(
   "/admin/category/new",
   auth,

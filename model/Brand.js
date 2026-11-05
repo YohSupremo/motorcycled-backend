@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
-// 4.4 brands — from motorcycled-ref-database.pdf Section 4.4
-// Examples: Honda, Yamaha, Suzuki, Kawasaki, CFMOTO
+
+
 const brandSchema = new mongoose.Schema(
   {
     name: {

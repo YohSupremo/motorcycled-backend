@@ -108,7 +108,7 @@ const installmentApplicationSchema = new mongoose.Schema(
     },
     downPaymentSettled: { type: Boolean, default: false },
     downPaymentSettledAt: { type: Date },
-    downPaymentReference: { type: String, trim: true }, // ref number submitted by customer for online payments
+    downPaymentReference: { type: String, trim: true }, 
     paymentHistory: [
       {
         paidAt: { type: Date, default: Date.now },
@@ -122,7 +122,7 @@ const installmentApplicationSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-// Auto-generate applicationRef before validation
+
 installmentApplicationSchema.pre("validate", async function () {
   if (!this.applicationRef) {
     try {
@@ -136,7 +136,7 @@ installmentApplicationSchema.pre("validate", async function () {
   }
 });
 
-// Indexes for fast customer application lookups and admin status filtering
+
 installmentApplicationSchema.index({ user: 1, createdAt: -1 });
 installmentApplicationSchema.index({ applicationStatus: 1, createdAt: -1 });
 

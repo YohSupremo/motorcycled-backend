@@ -33,18 +33,14 @@ export const sendPasswordResetEmail = async ({
   return info;
 };
 
-/**
- * Format currency in Philippine Peso.
- */
+
 const formatPHP = (val) =>
   `₱${Number(val || 0).toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
 
-/**
- * Human-readable status mapping.
- */
+
 const STATUS_LABELS = {
   pending: "Pending Confirmation",
   processing: "Processing",
@@ -54,16 +50,7 @@ const STATUS_LABELS = {
   canceled: "Cancelled",
 };
 
-/**
- * Sends a clean, minimal order status update email with an item list, subtotal, total, and PDF attachment.
- * Adheres to clean-ui rules: single accent, no unnecessary pills/tags, no duplicate order numbers, no cold blue-slate tints.
- * @param {Object} params
- * @param {Object} params.order - Populated Order document
- * @param {Object} params.user - Customer user document
- * @param {string} params.newStatus - The updated orderStatus string
- * @param {Buffer} params.pdfBuffer - PDF invoice buffer to attach
- * @returns {Promise<{ success: boolean, messageId?: string, previewUrl?: string }>}
- */
+
 export const sendOrderStatusEmail = async ({
   order,
   user,
@@ -103,7 +90,7 @@ export const sendOrderStatusEmail = async ({
     day: "numeric",
   });
 
-  // Dynamic status badges and messaging
+  
   let statusBadgeBg = "#fffbeb";
   let statusBadgeText = "#b45309";
   let statusBadgeBorder = "#fcd34d";
@@ -141,11 +128,11 @@ export const sendOrderStatusEmail = async ({
   const paymentBadgeText = isPaid ? "#047857" : "#b45309";
   const paymentBadgeBorder = isPaid ? "#6ee7b7" : "#fcd34d";
 
-  // Check if logo is available
+  
   const logoPath = path.resolve("assets/logo-sm.png");
   const hasLogo = fs.existsSync(logoPath);
 
-  // 4-column structured table with alternating row tints
+  
   const itemsHtml = (order.orderItems || [])
     .map(
       (item, idx) => `
@@ -166,7 +153,7 @@ export const sendOrderStatusEmail = async ({
     )
     .join("");
 
-  // Plain text fallback
+  
   const itemsText = (order.orderItems || [])
     .map((i) => `  • ${i.quantity}x ${i.name} — ${formatPHP(i.price * i.quantity)}`)
     .join("\n");
@@ -185,7 +172,6 @@ export const sendOrderStatusEmail = async ({
 <body style="margin: 0; padding: 32px 16px; background-color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #18181b; -webkit-font-smoothing: antialiased;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 620px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e4e4e7; border-top: 4px solid #047857; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
     
-    <!-- Clean Dealership Brand Receipt Header -->
     <tr>
       <td style="background-color: #ffffff; padding: 22px 28px; border-bottom: 1px solid #e4e4e7;">
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
@@ -223,11 +209,9 @@ export const sendOrderStatusEmail = async ({
       </td>
     </tr>
 
-    <!-- Body Content -->
     <tr>
       <td style="padding: 28px 28px 24px 28px;">
         
-        <!-- Order Status & Customer Greeting -->
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 24px;">
           <tr>
             <td>
@@ -246,7 +230,6 @@ export const sendOrderStatusEmail = async ({
           </tr>
         </table>
 
-        <!-- Dual Details Grid (Fulfillment & Payment) -->
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 26px;">
           <tr>
             <td width="48%" style="vertical-align: top; background-color: #fafafa; border: 1px solid #e4e4e7; border-radius: 6px; padding: 16px 18px;">
@@ -285,12 +268,10 @@ export const sendOrderStatusEmail = async ({
           </tr>
         </table>
 
-        <!-- Ordered Items Title -->
         <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: #71717a; margin-bottom: 10px;">
           ORDER BREAKDOWN
         </div>
 
-        <!-- 4-Column Items Table -->
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse; margin-bottom: 24px; border: 1px solid #e4e4e7; border-radius: 6px; overflow: hidden;">
           <thead>
             <tr style="background-color: #fafafa; border-bottom: 1.5px solid #e4e4e7;">
@@ -305,7 +286,6 @@ export const sendOrderStatusEmail = async ({
           </tbody>
         </table>
 
-        <!-- Totals Card -->
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 26px;">
           <tr>
             <td style="vertical-align: top; padding-right: 20px;">
@@ -345,7 +325,6 @@ export const sendOrderStatusEmail = async ({
           </tr>
         </table>
 
-        <!-- Attached Receipt Callout Box & Action Button -->
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 24px; background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 14px 18px;">
           <tr>
             <td style="vertical-align: middle;">
@@ -378,7 +357,6 @@ export const sendOrderStatusEmail = async ({
       </td>
     </tr>
 
-    <!-- Dealership Guarantee & Support Footer -->
     <tr>
       <td style="padding: 20px 28px; background-color: #fafafa; border-top: 1px solid #e4e4e7;">
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0">

@@ -1,7 +1,7 @@
 import Category from "../model/Category.js";
 import Product from "../model/Product.js";
 
-// Default seed data matching motorcycled-ref-database.pdf §4.3
+
 const DEFAULT_CATEGORIES = [
   { name: "Motorcycles", description: "Full motorcycle units" },
   { name: "Engine Parts", description: "Engine components and internals" },
@@ -13,7 +13,7 @@ const DEFAULT_CATEGORIES = [
   { name: "Lubricants", description: "Engine oils and lubricants" },
 ];
 
-// Seed categories if empty on startup
+
 export const seedCategoryDefaults = async () => {
   try {
     const catCount = await Category.countDocuments();
@@ -26,9 +26,9 @@ export const seedCategoryDefaults = async () => {
   }
 };
 
-// ─── PUBLIC / ADMIN: GET ALL CATEGORIES ───────────────────────────────────────
-// GET /api/v1/categories
-// Returns active (non-archived) categories with aggregated assigned product count (PDF §5)
+
+
+
 export const getCategories = async (req, res) => {
   try {
     let matchStage = { isArchived: { $ne: true } };
@@ -78,8 +78,8 @@ export const getCategories = async (req, res) => {
   }
 };
 
-// ─── PUBLIC: GET SINGLE CATEGORY ──────────────────────────────────────────────
-// GET /api/v1/category/:id
+
+
 export const getSingleCategory = async (req, res) => {
   try {
     const category = await Category.findById(req.params.id);
@@ -100,8 +100,8 @@ export const getSingleCategory = async (req, res) => {
   }
 };
 
-// ─── ADMIN: CREATE CATEGORY ───────────────────────────────────────────────────
-// POST /api/v1/admin/category/new
+
+
 export const createCategory = async (req, res) => {
   try {
     const { name, description } = req.body;
@@ -131,8 +131,8 @@ export const createCategory = async (req, res) => {
   }
 };
 
-// ─── ADMIN: UPDATE CATEGORY ───────────────────────────────────────────────────
-// PUT /api/v1/admin/category/:id
+
+
 export const updateCategory = async (req, res) => {
   try {
     const { name, description } = req.body;
@@ -167,8 +167,8 @@ export const updateCategory = async (req, res) => {
   }
 };
 
-// ─── ADMIN: DELETE CATEGORY (WITH 409 CONFLICT CHECK & SOFT DELETE) ───────────
-// DELETE /api/v1/admin/category/:id
+
+
 export const deleteCategory = async (req, res) => {
   try {
     const category = await Category.findById(req.params.id);
@@ -176,7 +176,7 @@ export const deleteCategory = async (req, res) => {
       return res.status(404).json({ success: false, message: "Category not found" });
     }
 
-    // 1. Backend checks whether the category has active products
+    
     const activeProducts = await Product.find({
       category: req.params.id,
       isArchived: { $ne: true },
@@ -184,7 +184,7 @@ export const deleteCategory = async (req, res) => {
 
     const productCount = activeProducts.length;
 
-    // 2. If products exist, return a conflict response (409 Conflict) containing the product count & products
+    
     if (productCount > 0) {
       return res.status(409).json({
         success: false,
@@ -195,7 +195,7 @@ export const deleteCategory = async (req, res) => {
       });
     }
 
-    // 3. Once no active products reference the category, soft-delete it
+    
     category.isArchived = true;
     await category.save();
 
@@ -210,8 +210,8 @@ export const deleteCategory = async (req, res) => {
   }
 };
 
-// ─── ADMIN: REASSIGN PRODUCTS AND SOFT-DELETE CATEGORY ────────────────────────
-// POST /api/v1/admin/category/:id/reassign
+
+
 export const reassignCategoryAndSoftDelete = async (req, res) => {
   try {
     const { id } = req.params;
@@ -241,13 +241,13 @@ export const reassignCategoryAndSoftDelete = async (req, res) => {
       return res.status(404).json({ success: false, message: "Selected target category was not found or is archived" });
     }
 
-    // Reassign all active products
+    
     const result = await Product.updateMany(
       { category: id },
       { $set: { category: targetCategoryId } },
     );
 
-    // Once no active products reference the source category, soft-delete it
+    
     sourceCategory.isArchived = true;
     await sourceCategory.save();
 
@@ -266,8 +266,8 @@ export const reassignCategoryAndSoftDelete = async (req, res) => {
   }
 };
 
-// ─── ADMIN: RESTORE CATEGORY ─────────────────────────────────────────────────
-// PUT /api/v1/admin/category/:id/restore
+
+
 export const restoreCategory = async (req, res) => {
   try {
     const category = await Category.findById(req.params.id);

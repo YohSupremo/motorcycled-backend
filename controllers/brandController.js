@@ -2,7 +2,7 @@ import Brand from "../model/Brand.js";
 import Product from "../model/Product.js";
 import { cloudConf } from "../config/cloudinary.js";
 
-// Helper: Upload a brand logo to Cloudinary
+
 const uploadLogoToCloudinary = (dataUrl) =>
   cloudConf.uploader.upload(dataUrl, {
     folder: "motorshop/brands",
@@ -10,11 +10,11 @@ const uploadLogoToCloudinary = (dataUrl) =>
     crop: "limit",
   });
 
-// Helper: Delete a brand logo from Cloudinary by publicId
+
 const destroyFromCloudinary = (publicId) =>
   cloudConf.uploader.destroy(publicId);
 
-// Default seed data matching motorcycled-ref-database.pdf §4.4
+
 const DEFAULT_BRANDS = [
   { name: "Honda" },
   { name: "Yamaha" },
@@ -23,7 +23,7 @@ const DEFAULT_BRANDS = [
   { name: "CFMOTO" },
 ];
 
-// Seed brands if empty on startup
+
 export const seedBrandDefaults = async () => {
   try {
     const brandCount = await Brand.countDocuments();
@@ -36,9 +36,9 @@ export const seedBrandDefaults = async () => {
   }
 };
 
-// ─── PUBLIC / ADMIN: GET ALL BRANDS ───────────────────────────────────────────
-// GET /api/v1/brands
-// Returns active (non-archived) brands with aggregated assigned product count (PDF §5)
+
+
+
 export const getBrands = async (req, res) => {
   try {
     let matchStage = { isArchived: { $ne: true } };
@@ -88,8 +88,8 @@ export const getBrands = async (req, res) => {
   }
 };
 
-// ─── PUBLIC: GET SINGLE BRAND ─────────────────────────────────────────────────
-// GET /api/v1/brand/:id
+
+
 export const getSingleBrand = async (req, res) => {
   try {
     const brand = await Brand.findById(req.params.id);
@@ -110,8 +110,8 @@ export const getSingleBrand = async (req, res) => {
   }
 };
 
-// ─── ADMIN: CREATE BRAND ──────────────────────────────────────────────────────
-// POST /api/v1/admin/brand/new
+
+
 export const createBrand = async (req, res) => {
   try {
     const { name, logo } = req.body;
@@ -155,8 +155,8 @@ export const createBrand = async (req, res) => {
   }
 };
 
-// ─── ADMIN: UPDATE BRAND ──────────────────────────────────────────────────────
-// PUT /api/v1/admin/brand/:id
+
+
 export const updateBrand = async (req, res) => {
   try {
     const { name, logo } = req.body;
@@ -179,7 +179,7 @@ export const updateBrand = async (req, res) => {
       brand.name = trimmedName;
     }
 
-    // Handle logo changes
+    
     if (logo !== undefined) {
       if (typeof logo === "string" && logo.startsWith("data:")) {
         if (brand.logo?.publicId) {
@@ -214,8 +214,8 @@ export const updateBrand = async (req, res) => {
   }
 };
 
-// ─── ADMIN: DELETE BRAND (WITH 409 CONFLICT CHECK & SOFT DELETE) ──────────────
-// DELETE /api/v1/admin/brand/:id
+
+
 export const deleteBrand = async (req, res) => {
   try {
     const brand = await Brand.findById(req.params.id);
@@ -223,7 +223,7 @@ export const deleteBrand = async (req, res) => {
       return res.status(404).json({ success: false, message: "Brand not found" });
     }
 
-    // 1. Backend checks whether the brand has active products
+    
     const activeProducts = await Product.find({
       brand: req.params.id,
       isArchived: { $ne: true },
@@ -231,7 +231,7 @@ export const deleteBrand = async (req, res) => {
 
     const productCount = activeProducts.length;
 
-    // 2. If products exist, return conflict response (409 Conflict) containing product count & products
+    
     if (productCount > 0) {
       return res.status(409).json({
         success: false,
@@ -242,7 +242,7 @@ export const deleteBrand = async (req, res) => {
       });
     }
 
-    // 3. Once no active products reference the brand, soft-delete it
+    
     brand.isArchived = true;
     await brand.save();
 
@@ -257,8 +257,8 @@ export const deleteBrand = async (req, res) => {
   }
 };
 
-// ─── ADMIN: REASSIGN PRODUCTS AND SOFT-DELETE BRAND ───────────────────────────
-// POST /api/v1/admin/brand/:id/reassign
+
+
 export const reassignBrandAndSoftDelete = async (req, res) => {
   try {
     const { id } = req.params;
@@ -288,13 +288,13 @@ export const reassignBrandAndSoftDelete = async (req, res) => {
       return res.status(404).json({ success: false, message: "Selected target brand was not found or is archived" });
     }
 
-    // Reassign all active products
+    
     const result = await Product.updateMany(
       { brand: id },
       { $set: { brand: targetBrandId } },
     );
 
-    // Once no active products reference the source brand, soft-delete it
+    
     sourceBrand.isArchived = true;
     await sourceBrand.save();
 
@@ -313,8 +313,8 @@ export const reassignBrandAndSoftDelete = async (req, res) => {
   }
 };
 
-// ─── ADMIN: RESTORE BRAND ────────────────────────────────────────────────────
-// PUT /api/v1/admin/brand/:id/restore
+
+
 export const restoreBrand = async (req, res) => {
   try {
     const brand = await Brand.findById(req.params.id);

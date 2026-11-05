@@ -4,8 +4,8 @@ import Product from "../model/Product.js";
 import Order from "../model/Order.js";
 import { Filter } from "bad-words";
 
-// Bad-words filter configuration (Unit 1: 10pts)
-// Masks profanities and offensive language with asterisks (****)
+
+
 const badWordsFilter = new Filter();
 badWordsFilter.addWords(
   "gago",
@@ -31,8 +31,8 @@ export const cleanBadWords = (text) => {
   }
 };
 
-// Recompute a product's ratings average and numOfReviews from its visible
-// reviews, then persist both onto the Product document.
+
+
 const recomputeProductRating = async (productId) => {
   const stats = await Review.aggregate([
     {
@@ -59,9 +59,9 @@ const recomputeProductRating = async (productId) => {
   });
 };
 
-// A customer may review a product only after it has been delivered (a completed
-// order). `ordered` tracks any non-canceled order and is used to explain the
-// "on the way" state in the UI; `received` gates actually writing a review.
+
+
+
 const getOrderFlags = async (userId, productId) => {
   const orders = await Order.find({
     user: userId,
@@ -86,8 +86,8 @@ const validateReviewInput = (rating, comment) => {
   return { rating: numericRating, comment: (comment || "").trim() };
 };
 
-// ─── PUBLIC: LIST REVIEWS FOR A PRODUCT ───────────────────────────────────────
-// GET /api/v1/product/:id/reviews
+
+
 export const getProductReviews = async (req, res) => {
   try {
     const { id } = req.params;
@@ -109,8 +109,8 @@ export const getProductReviews = async (req, res) => {
   }
 };
 
-// ─── CUSTOMER: OWN REVIEW + ELIGIBILITY ───────────────────────────────────────
-// GET /api/v1/product/:id/my-review  (auth required)
+
+
 export const getMyReview = async (req, res) => {
   try {
     const { id: productId } = req.params;
@@ -138,8 +138,8 @@ export const getMyReview = async (req, res) => {
   }
 };
 
-// ─── CUSTOMER: CREATE OWN REVIEW ──────────────────────────────────────────────
-// POST /api/v1/product/:id/review  (auth required)
+
+
 export const createReview = async (req, res) => {
   try {
     const { id: productId } = req.params;
@@ -185,7 +185,7 @@ export const createReview = async (req, res) => {
     });
   }
 
-  // Mask bad words in title and comment (Unit 1: 10pts bad-words package)
+  
   const cleanedTitle = cleanBadWords((req.body.title || "").trim());
   const cleanedComment = cleanBadWords(comment);
 
@@ -217,8 +217,8 @@ export const createReview = async (req, res) => {
   }
 };
 
-// ─── CUSTOMER: UPDATE OWN REVIEW ──────────────────────────────────────────────
-// PUT /api/v1/product/:id/review  (auth required)
+
+
 export const updateReview = async (req, res) => {
   try {
     const { id: productId } = req.params;
@@ -249,7 +249,7 @@ export const updateReview = async (req, res) => {
 
   const flags = await getOrderFlags(req.user._id, productId);
 
-  // Mask bad words on review update as well
+  
   review.rating = rating;
   review.title = cleanBadWords((req.body.title || "").trim());
   review.comment = cleanBadWords(comment);
@@ -275,8 +275,8 @@ export const updateReview = async (req, res) => {
   }
 };
 
-// ─── CUSTOMER: DELETE OWN REVIEW ──────────────────────────────────────────────
-// DELETE /api/v1/product/:id/review  (auth required)
+
+
 export const deleteMyReview = async (req, res) => {
   try {
     const { id: productId } = req.params;
@@ -307,8 +307,8 @@ export const deleteMyReview = async (req, res) => {
   }
 };
 
-// ─── ADMIN: LIST ALL REVIEWS ──────────────────────────────────────────────────
-// GET /api/v1/admin/reviews
+
+
 export const getAllReviews = async (req, res) => {
   try {
     const reviews = await Review.find()
@@ -323,8 +323,8 @@ export const getAllReviews = async (req, res) => {
   }
 };
 
-// ─── ADMIN: TOGGLE VISIBILITY (MODERATION) ────────────────────────────────────
-// PUT /api/v1/admin/review/:id/hide
+
+
 export const toggleReviewVisibility = async (req, res) => {
   try {
     const review = await Review.findById(req.params.id);

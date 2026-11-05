@@ -40,7 +40,7 @@ const supplierPayload = (body) => ({
   address: cleanString(body.address),
 });
 
-// GET /api/v1/suppliers?status=active|deactivated|all
+
 export const getSuppliers = async (req, res) => {
   try {
     const suppliers = await Supplier.find(statusFilter(req.query.status))
@@ -77,7 +77,7 @@ export const getSuppliers = async (req, res) => {
   }
 };
 
-// POST /api/v1/admin/supplier/new
+
 export const createSupplier = async (req, res) => {
   try {
     const payload = supplierPayload(req.body);
@@ -130,7 +130,7 @@ export const createSupplier = async (req, res) => {
   }
 };
 
-// PUT /api/v1/admin/supplier/:id
+
 export const updateSupplier = async (req, res) => {
   try {
     const supplier = await Supplier.findById(req.params.id);
@@ -190,9 +190,9 @@ export const updateSupplier = async (req, res) => {
   }
 };
 
-// DELETE /api/v1/admin/supplier/:id
-// Soft-deletes the supplier so they no longer appear in new restock selections,
-// while past restock records and financial audits remain completely intact.
+
+
+
 export const deactivateSupplier = async (req, res) => {
   try {
     const supplier = await Supplier.findById(req.params.id);
@@ -228,7 +228,7 @@ export const deactivateSupplier = async (req, res) => {
   }
 };
 
-// PUT /api/v1/admin/supplier/:id/restore
+
 export const restoreSupplier = async (req, res) => {
   try {
     const supplier = await Supplier.findById(req.params.id);

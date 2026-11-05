@@ -12,11 +12,11 @@ import { auth, authorizeRoles } from "../middleware/authMiddleware.js";
 
 const router = Router();
 
-// Public routes
+
 router.get("/brands", getBrands);
 router.get("/brand/:id", getSingleBrand);
 
-// Admin Brand routes
+
 router.post(
   "/admin/brand/new",
   auth,

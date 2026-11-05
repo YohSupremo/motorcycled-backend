@@ -3,12 +3,7 @@ import path from "path";
 import fs from "fs";
 import { getStoreTaxRate } from "../utils/tax.js";
 
-/**
- * Generate a PDF invoice/receipt Buffer for an order.
- * @param {Object} order - Populated Order document
- * @param {Object} user - Customer User document or object
- * @returns {Promise<Buffer>}
- */
+
 export const generateOrderInvoicePDF = async (order, user = {}) => {
   const taxRate = await getStoreTaxRate();
 
@@ -59,7 +54,7 @@ export const generateOrderInvoicePDF = async (order, user = {}) => {
         }
       );
 
-      // ─── Header with Official Dealership Logo ──────────────────────────────
+      
       const logoPath = path.resolve("assets/logo-sm.png");
       const hasLogo = fs.existsSync(logoPath);
 
@@ -74,18 +69,18 @@ export const generateOrderInvoicePDF = async (order, user = {}) => {
         doc.text("Metro Manila, Philippines · Official Transaction Receipt", 40, 80);
       }
 
-      // Invoice metadata on right
+      
       doc.fillColor("#18181b").fontSize(13).font("Helvetica-Bold").text(order.orderNumber, 320, 38, { align: "right", width: 235 });
       doc.fillColor("#71717a").fontSize(8.5).font("Helvetica").text(`Date: ${dateStr}`, 320, 56, { align: "right", width: 235 });
       doc.text(`Status: ${(order.orderStatus || "PENDING").toUpperCase()}`, 320, 68, { align: "right", width: 235 });
       doc.text(`Payment: ${(order.paymentStatus || "PENDING").toUpperCase()}`, 320, 80, { align: "right", width: 235 });
 
-      // Horizontal separator line
+      
       doc.strokeColor("#e4e4e7").lineWidth(1).moveTo(40, 96).lineTo(555, 96).stroke();
 
-      // ─── Customer & Order Info Section ──────────────────────────────────────
+      
       const infoTop = 108;
-      // Left: Billed / Delivered To
+      
       doc.fillColor("#047857").fontSize(9).font("Helvetica-Bold").text("BILLED / DELIVERED TO", 40, infoTop);
       doc.fillColor("#18181b").fontSize(10).font("Helvetica-Bold").text(customerName, 40, infoTop + 14);
       doc.fillColor("#52525b").fontSize(9).font("Helvetica");
@@ -96,7 +91,7 @@ export const generateOrderInvoicePDF = async (order, user = {}) => {
         doc.text(cityPostal, 40, infoTop + 64);
       }
 
-      // Right: Fulfillment & Method
+      
       const rightColX = 320;
       doc.fillColor("#047857").fontSize(9).font("Helvetica-Bold").text("FULFILLMENT & PAYMENT", rightColX, infoTop);
       doc.fillColor("#18181b").fontSize(10).font("Helvetica-Bold").text(fulfillment, rightColX, infoTop + 14);
@@ -107,7 +102,7 @@ export const generateOrderInvoicePDF = async (order, user = {}) => {
         doc.text(`Paid At: ${new Date(order.paidAt).toLocaleDateString("en-PH")}`, rightColX, infoTop + 52);
       }
 
-      // ─── Items Table Header ─────────────────────────────────────────────────
+      
       const tableTop = 205;
       doc.rect(40, tableTop, 515, 22).fill("#f4f4f5");
 
@@ -117,37 +112,37 @@ export const generateOrderInvoicePDF = async (order, user = {}) => {
       doc.text("UNIT PRICE", 345, tableTop + 6, { width: 95, align: "right" });
       doc.text("AMOUNT", 450, tableTop + 6, { width: 95, align: "right" });
 
-      // ─── Items Table Rows ───────────────────────────────────────────────────
+      
       let rowY = tableTop + 26;
       const items = order.orderItems || [];
 
       items.forEach((item, index) => {
-        // Light separator between rows
+        
         if (index > 0) {
           doc.strokeColor("#f4f4f5").lineWidth(0.5).moveTo(40, rowY - 6).lineTo(555, rowY - 6).stroke();
         }
 
         const itemName = item.name || "Product Item";
         
-        // Render item name cleanly without conflicting tags
+        
         doc.fillColor("#18181b").fontSize(9).font("Helvetica-Bold");
         const nameHeight = doc.heightOfString(itemName, { width: 235 });
         doc.text(itemName, 48, rowY, { width: 235 });
 
-        // Quantity, Unit Price, and Amount
+        
         doc.fillColor("#18181b").fontSize(9).font("Helvetica").text(String(item.quantity || 1), 290, rowY, { width: 40, align: "center" });
         doc.text(formatPHP(item.price), 345, rowY, { width: 95, align: "right" });
         doc.font("Helvetica-Bold").text(formatPHP((item.price || 0) * (item.quantity || 1)), 450, rowY, { width: 95, align: "right" });
 
-        // Advance rowY dynamically based on item name wrapping height
+        
         const rowHeight = Math.max(nameHeight + 10, 24);
         rowY += rowHeight;
       });
 
-      // Bottom border of items table
+      
       doc.strokeColor("#e4e4e7").lineWidth(1).moveTo(40, rowY + 4).lineTo(555, rowY + 4).stroke();
 
-      // ─── Totals Section ─────────────────────────────────────────────────────
+      
       const totalsY = rowY + 16;
       const vat = (order.itemsPrice || 0) * (taxRate / 100);
 
@@ -170,11 +165,11 @@ export const generateOrderInvoicePDF = async (order, user = {}) => {
       );
       renderTotalRow(`VAT (${taxRate}% Included):`, formatPHP(vat), totalsY + 32);
 
-      // Line before total
+      
       doc.strokeColor("#18181b").lineWidth(1.5).moveTo(totalsBoxX, totalsY + 48).lineTo(555, totalsY + 48).stroke();
       renderTotalRow("Total Amount:", formatPHP(order.totalPrice), totalsY + 54, true, true);
 
-      // ─── Footer ─────────────────────────────────────────────────────────────
+      
       const footerY = 720;
       doc.strokeColor("#e4e4e7").lineWidth(0.5).moveTo(40, footerY).lineTo(555, footerY).stroke();
       doc.fillColor("#a1a1aa").fontSize(8).font("Helvetica")

@@ -7,25 +7,25 @@ import Brand from "./model/Brand.js";
 import Product from "./model/Product.js";
 import User from "./model/User.js";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Catalog seed with MULTIPLE images per product.
-//
-// Photos are real, openly-licensed images served directly from Wikimedia
-// Commons (thumb.wikimedia.org / upload.wikimedia.org). The Product.images
-// array stores { url, publicId }; for these external URLs the publicId is a
-// stable synthetic id (mirrors the pattern already used in seed_rich_catalog).
-//
-// Idempotent: upserts categories, brands, an admin author, and products by
-// name. Existing documents are updated in place (images are replaced with the
-// multi-photo set below). Nothing is deleted.
-// ─────────────────────────────────────────────────────────────────────────────
+
+
+
+
+
+
+
+
+
+
+
+
 
 const W = (path) => `https://thumb.wikimedia.org/wikipedia/commons/thumb/${path}`;
 const U = (path) => `https://upload.wikimedia.org/wikipedia/commons/${path}`;
 
-// Curated per-product photo sets (3-4 distinct real photos each).
+
 const PHOTOS = {
-  // ── Motorcycles ───────────────────────────────────────────────────────────
+  
   "Honda Click 125i V3": [
     W("6/61/2022_Honda_Click_125.jpg/960px-2022_Honda_Click_125.jpg"),
     W("1/1f/Honda_Click_150_version_2_model_2019.jpg/960px-Honda_Click_150_version_2_model_2019.jpg"),
@@ -67,7 +67,7 @@ const PHOTOS = {
     W("7/7c/Moscow%2C_CFMoto_SR-S_750%2C_Sept_2026_01.jpg/960px-Moscow%2C_CFMoto_SR-S_750%2C_Sept_2026_01.jpg"),
   ],
 
-  // ── Engine Parts ──────────────────────────────────────────────────────────
+  
   "Yamaha Genuine V-Belt & Roller Weight Kit (NMAX/Aerox)": [
     W("1/13/Motorcycle_Engine_Block.jpg/960px-Motorcycle_Engine_Block.jpg"),
     U("4/4f/Keihin_carburetor.jpg"),
@@ -89,7 +89,7 @@ const PHOTOS = {
     U("4/4f/Keihin_carburetor.jpg"),
   ],
 
-  // ── Brakes ────────────────────────────────────────────────────────────────
+  
   "Brembo Sintered Brake Pads Front Caliper": [
     W("c/cd/Brembo_Disc_brake.jpg/960px-Brembo_Disc_brake.jpg"),
     W("a/a5/Brembo_motorcycle_brake.jpg/960px-Brembo_motorcycle_brake.jpg"),
@@ -106,7 +106,7 @@ const PHOTOS = {
     W("a/ab/Aprilia_disc_brake.jpg/960px-Aprilia_disc_brake.jpg"),
   ],
 
-  // ── Tires and Wheels ──────────────────────────────────────────────────────
+  
   "Pirelli Angel Scooter Tubeless Tire (110/70-14 Front)": [
     U("4/40/Dunlop_TT100_tyre.JPG"),
     W("1/17/Motorcycle_tire_in_tire_warmer_%281%29.jpg/960px-Motorcycle_tire_in_tire_warmer_%281%29.jpg"),
@@ -123,7 +123,7 @@ const PHOTOS = {
     U("4/40/Dunlop_TT100_tyre.JPG"),
   ],
 
-  // ── Helmets ───────────────────────────────────────────────────────────────
+  
   "HJC C10 Full-Face Helmet ECE 22.06 Matte Black": [
     W("d/de/HJC_Helmet_RPHA_11.jpg/960px-HJC_Helmet_RPHA_11.jpg"),
     W("9/90/Full-Face_Helmet_9274.jpg/960px-Full-Face_Helmet_9274.jpg"),
@@ -140,7 +140,7 @@ const PHOTOS = {
     U("a/a9/White_full-face-helmet.jpg"),
   ],
 
-  // ── Riding Gear ───────────────────────────────────────────────────────────
+  
   "Komine Armored Mesh Riding Jacket JK-128": [
     W("a/aa/Black_worn_leather_jacket_detail_1.jpg/960px-Black_worn_leather_jacket_detail_1.jpg"),
     W("a/a8/Metal_Motorcycle_Gloves.jpg/960px-Metal_Motorcycle_Gloves.jpg"),
@@ -157,7 +157,7 @@ const PHOTOS = {
     W("6/64/Dainese_racing_gloves.jpg/960px-Dainese_racing_gloves.jpg"),
   ],
 
-  // ── Accessories ───────────────────────────────────────────────────────────
+  
   "Givi B32N Bold Monolock 32-Liter Top Box": [
     W("c/cc/Piaggio_Liberty_with_Top_Box.jpg/960px-Piaggio_Liberty_with_Top_Box.jpg"),
     W("6/6f/Panniers_5467.jpg/960px-Panniers_5467.jpg"),
@@ -169,7 +169,7 @@ const PHOTOS = {
     W("c/cc/Piaggio_Liberty_with_Top_Box.jpg/960px-Piaggio_Liberty_with_Top_Box.jpg"),
   ],
 
-  // ── Lubricants ────────────────────────────────────────────────────────────
+  
   "Motul 7100 4T 10W-40 100% Synthetic 1-Liter": [
     U("b/bb/Mobil_1_motor_oil.jpg"),
     W("6/6c/Motor_oil_for_cars_and_motorcycles_from_various_producers_in_German_hardware_store.jpg/960px-Motor_oil_for_cars_and_motorcycles_from_various_producers_in_German_hardware_store.jpg"),
@@ -188,7 +188,7 @@ const PHOTOS = {
 };
 
 const PRODUCTS = [
-  // ── Motorcycles ───────────────────────────────────────────────────────────
+  
   { name: "Honda Click 125i V3", category: "Motorcycles", brand: "Honda", price: 81400, stock: 5, ratings: 4.8, numOfReviews: 34, installmentEligible: true, minInstallmentPrice: 16280,
     description: "Liquid-cooled 125cc PGM-FI eSP engine with Honda Smart Key and a full digital meter panel." },
   { name: "Yamaha NMAX 155 ABS", category: "Motorcycles", brand: "Yamaha", price: 151900, stock: 4, ratings: 4.9, numOfReviews: 58, installmentEligible: true, minInstallmentPrice: 30380,
@@ -204,7 +204,7 @@ const PRODUCTS = [
   { name: "CFMOTO 450SR Sport", category: "Motorcycles", brand: "CFMOTO", price: 299900, stock: 3, ratings: 4.7, numOfReviews: 15, installmentEligible: true, minInstallmentPrice: 59980,
     description: "Aerodynamic race-developed supersport with a 449cc parallel-twin 270-degree crankshaft and Brembo brakes." },
 
-  // ── Engine Parts ──────────────────────────────────────────────────────────
+  
   { name: "Yamaha Genuine V-Belt & Roller Weight Kit (NMAX/Aerox)", category: "Engine Parts", brand: "Yamaha", price: 1850, stock: 15, ratings: 4.8, numOfReviews: 45, installmentEligible: false,
     description: "Official OEM reinforced drive belt and calibrated 13g slider rollers for the Blue Core 155cc engine.",
     compatibleModels: ["Yamaha NMAX 155", "Yamaha Aerox 155"] },
@@ -217,7 +217,7 @@ const PRODUCTS = [
   { name: "Kawasaki Iridium Spark Plug CR9EIA-9", category: "Engine Parts", brand: "Kawasaki", price: 650, stock: 30, ratings: 4.9, numOfReviews: 62, installmentEligible: false,
     description: "Long-life fine-wire iridium center electrode ensuring instant ignition and improved throttle response." },
 
-  // ── Brakes ────────────────────────────────────────────────────────────────
+  
   { name: "Brembo Sintered Brake Pads Front Caliper", category: "Brakes", brand: "Yamaha", price: 1890, stock: 20, ratings: 4.9, numOfReviews: 73, installmentEligible: false,
     description: "High-friction sintered metallic compound offering progressive bite and thermal fade resistance." },
   { name: "Honda Genuine Front Disc Rotor 220mm (Click 125/150)", category: "Brakes", brand: "Honda", price: 1350, stock: 10, ratings: 4.6, numOfReviews: 24, installmentEligible: false,
@@ -226,7 +226,7 @@ const PRODUCTS = [
   { name: "Kawasaki Braided Steel Brake Line Hose Kit", category: "Brakes", brand: "Kawasaki", price: 2800, stock: 7, ratings: 4.7, numOfReviews: 16, installmentEligible: false,
     description: "Zero-expansion PTFE core with a braided stainless steel casing for firm, precise lever feel." },
 
-  // ── Tires and Wheels ──────────────────────────────────────────────────────
+  
   { name: "Pirelli Angel Scooter Tubeless Tire (110/70-14 Front)", category: "Tires and Wheels", brand: "Yamaha", price: 2650, stock: 14, ratings: 4.8, numOfReviews: 41, installmentEligible: false,
     description: "Reinforced structure with cross grooves for maximum wet grip, braking confidence, and stability." },
   { name: "Michelin City Grip 2 All-Weather Tire (130/70-13 Rear)", category: "Tires and Wheels", brand: "Honda", price: 3200, stock: 12, ratings: 4.9, numOfReviews: 53, installmentEligible: false,
@@ -234,7 +234,7 @@ const PRODUCTS = [
   { name: "Suzuki Enkei Lightweight Alloy Wheel Set (Front & Rear 17-inch)", category: "Tires and Wheels", brand: "Suzuki", price: 6800, stock: 4, ratings: 4.6, numOfReviews: 12, installmentEligible: false,
     description: "Aerodynamic lightweight alloy wheels that reduce unsprung weight and sharpen cornering response." },
 
-  // ── Helmets ───────────────────────────────────────────────────────────────
+  
   { name: "HJC C10 Full-Face Helmet ECE 22.06 Matte Black", category: "Helmets", brand: "Yamaha", price: 5490, stock: 8, ratings: 4.8, numOfReviews: 67, installmentEligible: false,
     description: "Advanced polycarbonate composite shell with the ACS channeling ventilation system and Pinlock readiness." },
   { name: "LS2 Stream II Dual Visor Helmet Gloss White", category: "Helmets", brand: "Honda", price: 4300, stock: 11, ratings: 4.7, numOfReviews: 39, installmentEligible: false,
@@ -242,7 +242,7 @@ const PRODUCTS = [
   { name: "MT Helmets Thunder 4 SV Solid Titanium", category: "Helmets", brand: "CFMOTO", price: 6200, stock: 5, ratings: 4.9, numOfReviews: 22, installmentEligible: false,
     description: "ECE 22.06 certified shell with a quick-release aerodynamic rear spoiler and hypoallergenic liners." },
 
-  // ── Riding Gear ───────────────────────────────────────────────────────────
+  
   { name: "Komine Armored Mesh Riding Jacket JK-128", category: "Riding Gear", brand: "Honda", price: 6900, stock: 7, ratings: 4.8, numOfReviews: 31, installmentEligible: false,
     description: "Full CE Level 2 shoulder, elbow, chest, and back protectors with breathable textile mesh ventilation." },
   { name: "Taichi Carbon Protective Summer Gloves RST448", category: "Riding Gear", brand: "Yamaha", price: 3450, stock: 16, ratings: 4.7, numOfReviews: 48, installmentEligible: false,
@@ -250,13 +250,13 @@ const PRODUCTS = [
   { name: "Alpinestars S-MX Riding Boots", category: "Riding Gear", brand: "Kawasaki", price: 8200, stock: 9, ratings: 4.8, numOfReviews: 27, installmentEligible: false,
     description: "Reinforced racing boots with TPU shin and ankle protection, replaceable toe sliders, and a breathable lining." },
 
-  // ── Accessories ───────────────────────────────────────────────────────────
+  
   { name: "Givi B32N Bold Monolock 32-Liter Top Box", category: "Accessories", brand: "Honda", price: 3100, stock: 18, ratings: 4.6, numOfReviews: 54, installmentEligible: false,
     description: "Heavy-duty 32L square top case that holds one modular full-face helmet, with the base plate included." },
   { name: "Shad Soft Side Pannier Bags (Pair)", category: "Accessories", brand: "Yamaha", price: 2600, stock: 22, ratings: 4.5, numOfReviews: 33, installmentEligible: false,
     description: "Weather-resistant saddlebags with reflective trim and hook-and-loop mounting straps for weekend touring." },
 
-  // ── Lubricants ────────────────────────────────────────────────────────────
+  
   { name: "Motul 7100 4T 10W-40 100% Synthetic 1-Liter", category: "Lubricants", brand: "Kawasaki", price: 750, stock: 40, ratings: 4.9, numOfReviews: 120, installmentEligible: false,
     description: "Ester-technology 4-stroke engine oil meeting JASO MA2 specifications for optimum wet-clutch response." },
   { name: "Yamalube AT 10W-40 Fully Synthetic Scooter Oil 800ml", category: "Lubricants", brand: "Yamaha", price: 380, stock: 35, ratings: 4.8, numOfReviews: 95, installmentEligible: false,
@@ -315,7 +315,7 @@ async function seed() {
     await mongoose.connect(process.env.DB_URI);
     console.log("Connected to MongoDB.");
 
-    // 1) Categories & brands (idempotent upsert so this works on a fresh DB)
+    
     const catMap = {};
     for (const cat of DEFAULT_CATEGORIES) {
       const doc = await Category.findOneAndUpdate(
@@ -336,11 +336,11 @@ async function seed() {
     }
     console.log(`Categories: ${Object.keys(catMap).length}, brands: ${Object.keys(brandMap).length}`);
 
-    // 2) Author for products
+    
     const admin = await ensureAdmin();
     console.log(`Author: ${admin.email} (${admin.role})`);
 
-    // 3) Products with multiple photos each
+    
     let upserted = 0;
     let missing = 0;
     for (const p of PRODUCTS) {

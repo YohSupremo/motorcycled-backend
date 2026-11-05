@@ -8,7 +8,7 @@ import Product from "./model/Product.js";
 import User from "./model/User.js";
 
 const sampleProducts = [
-  // ── MOTORCYCLES ────────────────────────────────────────────────────────────
+  
   {
     name: "Honda Click 125i V3",
     description: "Liquid-cooled, 125cc PGM-FI eSP engine with Honda Smart Key and full digital meter panel.",
@@ -101,7 +101,7 @@ const sampleProducts = [
     imageUrl: "https://images.unsplash.com/photo-1558980664-769d59546b3d?w=800",
   },
 
-  // ── ENGINE PARTS ───────────────────────────────────────────────────────────
+  
   {
     name: "Yamaha Genuine V-Belt & Roller Weight Kit (NMAX/Aerox)",
     description: "Official OEM reinforced drive belt and calibrated 13g slider rollers for Blue Core 155cc.",
@@ -151,7 +151,7 @@ const sampleProducts = [
     imageUrl: "https://images.unsplash.com/photo-1486006920555-c77dce18193b?w=800",
   },
 
-  // ── BRAKES ─────────────────────────────────────────────────────────────────
+  
   {
     name: "Brembo Sintered Brake Pads Front Caliper (Yamaha/Honda)",
     description: "High-friction sintered metallic compound offering progressive bite and thermal fade resistance.",
@@ -189,7 +189,7 @@ const sampleProducts = [
     imageUrl: "https://images.unsplash.com/photo-1486006920555-c77dce18193b?w=800",
   },
 
-  // ── TIRES AND WHEELS ───────────────────────────────────────────────────────
+  
   {
     name: "Pirelli Angel Scooter Tubeless Tire (110/70-14 Front)",
     description: "Reinforced structure with cross grooves for maximum wet grip, braking confidence, and stability.",
@@ -227,7 +227,7 @@ const sampleProducts = [
     imageUrl: "https://images.unsplash.com/photo-1578844251758-2f71da64c96f?w=800",
   },
 
-  // ── HELMETS ────────────────────────────────────────────────────────────────
+  
   {
     name: "HJC C10 Full-Face Helmet ECE 22.06 Matte Black",
     description: "Advanced polycarbonate composite shell with ACS advanced channeling ventilation system and Pinlock ready.",
@@ -265,7 +265,7 @@ const sampleProducts = [
     imageUrl: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=800",
   },
 
-  // ── RIDING GEAR ────────────────────────────────────────────────────────────
+  
   {
     name: "Komine Armored Mesh Riding Jacket JK-128",
     description: "Full CE Level 2 shoulder, elbow, chest, and back protectors with breathable textile mesh ventilation.",
@@ -291,7 +291,7 @@ const sampleProducts = [
     imageUrl: "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800",
   },
 
-  // ── ACCESSORIES ────────────────────────────────────────────────────────────
+  
   {
     name: "Givi B32N Bold Monolock 32-Liter Top Box",
     description: "Heavy-duty 32L square top case capable of holding 1 modular full-face helmet with base plate included.",
@@ -317,7 +317,7 @@ const sampleProducts = [
     imageUrl: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=800",
   },
 
-  // ── LUBRICANTS ─────────────────────────────────────────────────────────────
+  
   {
     name: "Motul 7100 4T 10W-40 100% Synthetic 1-Liter",
     description: "Ester technology 4-stroke engine oil meeting JASO MA2 specifications for optimum wet clutch response.",

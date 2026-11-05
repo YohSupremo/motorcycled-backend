@@ -14,7 +14,7 @@ import { sendOrderStatusEmail } from "../services/emailService.js";
 import { runInTransaction } from "../utils/transaction.js";
 import { getStoreTaxRate } from "../utils/tax.js";
 
-// ─── Helpers ───────────────────────────────────────────────────────────────────
+
 
 const PROCESSING_FEE = 1500;
 const INTEREST_RATES = { 12: 0.07, 24: 0.08, 36: 0.09 };
@@ -28,9 +28,7 @@ class HttpError extends Error {
   }
 }
 
-/**
- * Compute all installment financing figures from a product price + term.
- */
+
 function computeFinancing(productPrice, termMonths) {
   const interestRate = INTEREST_RATES[termMonths];
   const downPayment = Math.round(productPrice * 0.2);
@@ -41,10 +39,7 @@ function computeFinancing(productPrice, termMonths) {
   return { interestRate, downPayment, financedAmount, monthlyPayment, totalRepayment };
 }
 
-/**
- * Check if the chosen payment method is cash on delivery / cash on releasing / COD.
- * Note: Digital wallets like 'gcash' contain the letters 'cash' but are NOT cash on delivery.
- */
+
 const makeTransactionRef = (prefix = "TXN") =>
   `${prefix}-${new mongoose.Types.ObjectId().toString().slice(-8).toUpperCase()}`;
 
@@ -65,19 +60,14 @@ export const isCashOnDeliveryMethod = (method) => {
   );
 };
 
-// ─── newCheckout ───────────────────────────────────────────────────────────────
 
-/**
- * POST /api/v1/checkout
- * Processes a checkout session: creates Orders for cash purchases and
- * InstallmentApplications for installment purchases. Idempotent on
- * checkoutSessionId and atomic across stock, order, and application writes.
- */
+
+
 export const newCheckout = async (req, res) => {
   try {
     const { checkoutSessionId, items, shippingInfo, paymentMethod, paymentDetails } = req.body;
 
-    // ── 1. Basic validation ──────────────────────────────────────────────────
+    
     if (!checkoutSessionId) {
       return res.status(400).json({ success: false, message: "checkoutSessionId is required" });
     }
@@ -97,8 +87,8 @@ export const newCheckout = async (req, res) => {
       return res.status(400).json({ success: false, message: "paymentMethod is required" });
     }
 
-    // ── 1.5. Credit verification guard ──────────────────────────────────────
-    // Installment financing requires an approved credit verification on file.
+    
+    
     const hasInstallmentItem = items.some((i) => i.purchaseMethod === "installment");
     if (hasInstallmentItem) {
       const creditVerification = await CreditVerification.findOne({ user: req.user._id }).select("status").lean();
@@ -116,7 +106,7 @@ export const newCheckout = async (req, res) => {
       }
     }
 
-    // ── 2. Idempotency check ─────────────────────────────────────────────────
+    
     const [existingOrders, existingApps] = await Promise.all([
       Order.find({ checkoutSessionId }),
       InstallmentApplication.find({ checkoutSessionId }),
@@ -149,7 +139,7 @@ export const newCheckout = async (req, res) => {
       });
     }
 
-    // ── 3. Fetch products + determine types ──────────────────────────────────
+    
     const motorcycleCategory = await Category.findOne({ name: "Motorcycles" });
     const motorcycleCategoryId = motorcycleCategory ? motorcycleCategory._id.toString() : null;
 
@@ -191,7 +181,7 @@ export const newCheckout = async (req, res) => {
       const itemType = isMotorcycle ? "motorcycle" : "part";
 
       if (!isMotorcycle) {
-        // Parts/accessories — cash only
+        
         if (purchaseMethod === "installment") {
           results.push({
             productId,
@@ -206,7 +196,7 @@ export const newCheckout = async (req, res) => {
         }
         partsItems.push({ product, quantity, itemType });
       } else {
-        // Motorcycle
+        
         if (purchaseMethod === "installment") {
           if (!termMonths || !INTEREST_RATES[termMonths]) {
             results.push({
@@ -218,7 +208,7 @@ export const newCheckout = async (req, res) => {
           }
           motorcycleInstallmentItems.push({ product, quantity: 1, itemType, termMonths });
         } else {
-          // cash
+          
           if (product.stock < quantity) {
             results.push({ productId, status: "error", error: "Insufficient stock" });
             continue;
@@ -238,15 +228,15 @@ export const newCheckout = async (req, res) => {
       });
     }
 
-    // ── 3.5. Separate logistics for Parts vs Motorcycles ─────────────────────
-    // Motorcycles are ALWAYS released at the authorized showroom bay (pickup + PDI)
+    
+    
     const motorcycleShippingInfo = {
       ...shippingInfo,
       fulfillmentMethod: "pickup",
       branch: shippingInfo.branch,
     };
 
-    // Parts can be courier delivery (to customer home) or showroom pickup
+    
     const partsFulfillmentMethod =
       shippingInfo.partsFulfillmentMethod ||
       shippingInfo.fulfillmentMethod ||
@@ -268,7 +258,7 @@ export const newCheckout = async (req, res) => {
       const orders = [];
       const transactionResults = [];
 
-      // ── 4. Create parts Order (grouped) ────────────────────────────────────
+      
       if (partsItems.length > 0) {
         const orderItems = [];
 
@@ -351,9 +341,9 @@ export const newCheckout = async (req, res) => {
         }
       }
 
-      // ── 5. Create one Order for all cash motorcycle purchases ───────────────
-      // Motorcycles must be released together from the dealership, so multiple
-      // motorcycle lines in one checkout share one order and one receipt.
+      
+      
+      
       if (motorcycleCashItems.length > 0) {
         const orderItems = [];
 
@@ -387,7 +377,7 @@ export const newCheckout = async (req, res) => {
           (sum, item) => sum + item.price * item.quantity,
           0,
         );
-        // Motorcycles are always picked up from the dealership for release and PDI.
+        
         const isCod = isCashOnDeliveryMethod(paymentMethod);
         const motoOrder = new Order({
           checkoutSessionId,
@@ -435,9 +425,9 @@ export const newCheckout = async (req, res) => {
         }
       }
 
-      // ── 6. Create InstallmentApplications (no stock deduction, no payment collected) ──
-      // IMPORTANT: downpayment is NOT collected at checkout.
-      // The customer will be prompted to pay ONLY after admin approves the application.
+      
+      
+      
       for (const ii of motorcycleInstallmentItems) {
         const financing = computeFinancing(ii.product.price, ii.termMonths);
 
@@ -459,7 +449,7 @@ export const newCheckout = async (req, res) => {
           processingFee: PROCESSING_FEE,
           totalRepayment: financing.totalRepayment,
           shippingInfo: motorcycleShippingInfo,
-          // Downpayment details are NOT set at checkout — collected after approval only
+          
           downPaymentMethod: null,
           downPaymentSettled: false,
           documentUploads: {
@@ -485,7 +475,7 @@ export const newCheckout = async (req, res) => {
 
     results.push(...transactionResults);
 
-    // Notifications run only after the transaction has committed.
+    
     for (const order of createdOrders) {
       try {
         await notifyOrderPlaced(order, req.user);
@@ -497,7 +487,7 @@ export const newCheckout = async (req, res) => {
       }
     }
 
-    // ── 7. Build summary ──────────────────────────────────────────────────────
+    
     const totalOrders = results.filter((r) => r.status === "success" && r.type === "order").length;
     const totalApplications = results.filter(
       (r) => r.status === "success" && r.type === "application",
@@ -525,9 +515,9 @@ export const newCheckout = async (req, res) => {
   }
 };
 
-// ─── newOrder (Reference / Course API Compatibility) ──────────────────────────
-// POST /api/v1/order/new
-// Reference: itcp318-s3a-2026/backend/controllers/order.js
+
+
+
 export const newOrder = async (req, res) => {
   try {
     const {
@@ -616,12 +606,9 @@ export const newOrder = async (req, res) => {
   }
 };
 
-// ─── getMyOrders ───────────────────────────────────────────────────────────────
 
-/**
- * GET /api/v1/orders/me
- * Returns all orders and installment applications belonging to the logged-in user.
- */
+
+
 export const getMyOrders = async (req, res) => {
   try {
     const [orders, applications] = await Promise.all([
@@ -643,12 +630,9 @@ export const getMyOrders = async (req, res) => {
   }
 };
 
-// ─── getOrderDetails ───────────────────────────────────────────────────────────
 
-/**
- * GET /api/v1/order/:id
- * Returns a single order. Accessible by the owning customer or an admin.
- */
+
+
 export const getOrderDetails = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id).populate(
@@ -674,12 +658,9 @@ export const getOrderDetails = async (req, res) => {
   }
 };
 
-// ─── getApplicationDetails ─────────────────────────────────────────────────────
 
-/**
- * GET /api/v1/application/:id
- * Returns a single installment application. Accessible by the owning customer or an admin.
- */
+
+
 export const getApplicationDetails = async (req, res) => {
   try {
     const application = await InstallmentApplication.findById(req.params.id).populate(
@@ -709,12 +690,9 @@ export const getApplicationDetails = async (req, res) => {
   }
 };
 
-// ─── getAdminOrders ────────────────────────────────────────────────────────────
 
-/**
- * GET /api/v1/admin/orders
- * Returns all orders (admin only).
- */
+
+
 export const getAdminOrders = async (req, res) => {
   try {
     const orders = await Order.find()
@@ -732,12 +710,9 @@ export const getAdminOrders = async (req, res) => {
   }
 };
 
-// ─── getAdminApplications ──────────────────────────────────────────────────────
 
-/**
- * GET /api/v1/admin/applications
- * Returns all installment applications (admin only).
- */
+
+
 export const getAdminApplications = async (req, res) => {
   try {
     const applications = await InstallmentApplication.find()
@@ -757,9 +732,9 @@ export const getAdminApplications = async (req, res) => {
   }
 };
 
-// ─── updateOrderStatus ─────────────────────────────────────────────────────────
 
-// Allowed forward transitions for orderStatus
+
+
 const STATUS_TRANSITIONS = {
   pending: ["processing", "canceled"],
   processing: ["ready_for_pickup", "shipped", "canceled"],
@@ -769,10 +744,7 @@ const STATUS_TRANSITIONS = {
   canceled: [],
 };
 
-/**
- * PUT /api/v1/admin/order/:id/status
- * Updates order and/or payment status (admin only).
- */
+
 export const updateOrderStatus = async (req, res) => {
   try {
     const { orderStatus, paymentStatus, paidAt } = req.body;
@@ -782,7 +754,7 @@ export const updateOrderStatus = async (req, res) => {
       return res.status(404).json({ success: false, message: "Order not found" });
     }
 
-    // Validate orderStatus transition if provided
+    
     if (orderStatus && orderStatus !== order.orderStatus) {
       const allowed = STATUS_TRANSITIONS[order.orderStatus] || [];
       if (!allowed.includes(orderStatus)) {
@@ -793,7 +765,7 @@ export const updateOrderStatus = async (req, res) => {
       }
       const previousStatus = order.orderStatus;
       order.orderStatus = orderStatus;
-      // When cancelling an order that was pending or processing, restore inventory stock
+      
       if (orderStatus === "canceled" && ["pending", "processing"].includes(previousStatus)) {
         const adminName = performedByName(req.user);
         for (const item of order.orderItems || []) {
@@ -823,7 +795,7 @@ export const updateOrderStatus = async (req, res) => {
       order.paymentStatus = paymentStatus;
     }
 
-    // Auto-mark payment as paid when order reaches completed status (e.g., Cash on Releasing / COD)
+    
     if (order.orderStatus === "completed" && order.paymentStatus !== "paid") {
       order.paymentStatus = "paid";
       if (!order.paidAt) {
@@ -837,7 +809,7 @@ export const updateOrderStatus = async (req, res) => {
 
     await order.save();
 
-    // Populate user and order details for email + PDF receipt generation
+    
     const populatedOrder = await Order.findById(order._id)
       .populate("user", "firstName lastName email contactNumber")
       .populate("orderItems.product", "name category brand");
@@ -846,10 +818,10 @@ export const updateOrderStatus = async (req, res) => {
     let pdfBuffer = null;
 
     try {
-      // 1. Generate the official PDF invoice/receipt
+      
       pdfBuffer = await generateOrderInvoicePDF(populatedOrder, populatedOrder.user);
 
-      // 2. Email customer on status update with item list, subtotal, and total + PDF attachment
+      
       emailResult = await sendOrderStatusEmail({
         order: populatedOrder,
         user: populatedOrder.user,
@@ -857,7 +829,7 @@ export const updateOrderStatus = async (req, res) => {
         pdfBuffer,
       });
 
-      // 3. Persist notification in database ledger
+      
       await sendNotification({
         recipientId: populatedOrder.user?._id || order.user,
         type: "order_status_update",
@@ -885,12 +857,9 @@ export const updateOrderStatus = async (req, res) => {
   }
 };
 
-// ─── approveApplication ────────────────────────────────────────────────────────
 
-/**
- * PUT /api/v1/admin/application/:id/approve
- * Approves an installment application with confirmed financing terms (admin only).
- */
+
+
 export const approveApplication = async (req, res) => {
   try {
     const { confirmedTerms } = req.body;
@@ -917,7 +886,7 @@ export const approveApplication = async (req, res) => {
     application.approvedAt = new Date();
     application.confirmedTerms = confirmedTerms;
 
-    // ── Purge uploaded verification documents (DPA compliance) ──────────────
+    
     if (application.documentUploads) {
       if (application.documentUploads.idCard?.publicId) {
         try {
@@ -941,10 +910,10 @@ export const approveApplication = async (req, res) => {
 
     await application.save();
 
-    // ── Notify applicant to proceed with downpayment ─────────────────────────
-    // NOTE: No money is collected here. The customer must visit Orders page and
-    // submit their downpayment method. The order is created only after admin
-    // calls confirmInstallmentOrder (PUT /admin/application/:id/confirm-order).
+    
+    
+    
+    
     const applicant = await User.findById(application.user);
     if (applicant) {
       notifyInstallmentUpdate(application, applicant, "approved");
@@ -963,12 +932,9 @@ export const approveApplication = async (req, res) => {
   }
 };
 
-// ─── rejectApplication ─────────────────────────────────────────────────────────
 
-/**
- * PUT /api/v1/admin/application/:id/reject
- * Rejects an installment application with an optional reason (admin only).
- */
+
+
 export const rejectApplication = async (req, res) => {
   try {
     const { rejectionReason } = req.body;
@@ -993,7 +959,7 @@ export const rejectApplication = async (req, res) => {
       application.rejectionReason = rejectionReason;
     }
 
-    // Ephemeral document purge (DPA compliance)
+    
     if (application.documentUploads) {
       if (application.documentUploads.idCard?.publicId) {
         try {
@@ -1034,14 +1000,9 @@ export const rejectApplication = async (req, res) => {
   }
 };
 
-// ─── submitDownpayment ─────────────────────────────────────────────────────────
 
-/**
- * PUT /api/v1/application/:id/submit-downpayment
- * Customer submits their chosen downpayment method and optional reference number
- * AFTER their application has been approved by admin.
- * Does NOT settle the downpayment — admin must call confirm-order to finalize.
- */
+
+
 export const submitDownpayment = async (req, res) => {
   try {
     const { downPaymentMethod, referenceNumber } = req.body;
@@ -1059,12 +1020,12 @@ export const submitDownpayment = async (req, res) => {
       return res.status(404).json({ success: false, message: "Installment application not found" });
     }
 
-    // Only the owning customer may submit a downpayment
+    
     if (application.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({ success: false, message: "Access denied" });
     }
 
-    // Guard: application must be approved first
+    
     if (application.applicationStatus !== "approved") {
       return res.status(400).json({
         success: false,
@@ -1072,7 +1033,7 @@ export const submitDownpayment = async (req, res) => {
       });
     }
 
-    // Guard: cannot re-submit once downpayment is already settled
+    
     if (application.downPaymentSettled) {
       return res.status(409).json({
         success: false,
@@ -1081,15 +1042,15 @@ export const submitDownpayment = async (req, res) => {
     }
 
     application.downPaymentMethod = downPaymentMethod;
-    // Store reference number for online payments so admin can verify
+    
     if (referenceNumber && downPaymentMethod !== "cash_on_releasing") {
       application.downPaymentReference = referenceNumber.trim();
     }
 
     await application.save();
 
-    // Log the submission for admin visibility; the admin will see the updated
-    // downPaymentMethod and downPaymentReference in the AdminOrders panel.
+    
+    
     console.log(
       `[submitDownpayment] ${req.user.firstName || "Customer"} submitted downpayment ` +
       `(${downPaymentMethod}) for ${application.applicationRef}` +
@@ -1109,13 +1070,9 @@ export const submitDownpayment = async (req, res) => {
   }
 };
 
-// ─── confirmInstallmentOrder ───────────────────────────────────────────────────
 
-/**
- * PUT /api/v1/admin/application/:id/confirm-order
- * Called after downpayment is confirmed. Creates the linked Order for an
- * approved installment application and deducts stock (admin only).
- */
+
+
 export const confirmInstallmentOrder = async (req, res) => {
   try {
     const { application, order } = await runInTransaction(async (session) => {
@@ -1146,7 +1103,7 @@ export const confirmInstallmentOrder = async (req, res) => {
         throw new HttpError("Product is out of stock and cannot be ordered", 400);
       }
 
-      // Use confirmed terms if available, otherwise fall back to application terms
+      
       const terms = application.confirmedTerms || application;
 
       const itemsPrice = application.productPrice;
@@ -1220,10 +1177,7 @@ export const confirmInstallmentOrder = async (req, res) => {
   }
 };
 
-/**
- * GET /api/v1/order/:id/receipt
- * Renders printable HTML / PDF invoice receipt for an order.
- */
+
 export const getOrderReceipt = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
@@ -1240,7 +1194,7 @@ export const getOrderReceipt = async (req, res) => {
       return res.status(403).send("Unauthorized to access this receipt");
     }
 
-    // Direct binary PDF stream if format=pdf or download=true requested
+    
     if (req.query.format === "pdf" || req.query.download === "true") {
       const pdfBuffer = await generateOrderInvoicePDF(order, order.user);
       res.setHeader("Content-Type", "application/pdf");
@@ -1374,10 +1328,7 @@ export const getOrderReceipt = async (req, res) => {
   }
 };
 
-/**
- * POST /api/v1/application/:id/pay-installment
- * Allows a customer to pay their monthly amortization or settle installments online.
- */
+
 export const payInstallment = async (req, res) => {
   try {
     const { paymentMethod = "gcash", referenceNumber } = req.body;
@@ -1397,7 +1348,7 @@ export const payInstallment = async (req, res) => {
     const currentPaid = application.installmentsPaid || 0;
     const termMonths = application.termMonths || 12;
 
-    // ── Guard: downpayment must be settled before amortization ───────────────
+    
     if (!application.downPaymentSettled) {
       return res.status(400).json({
         success: false,
@@ -1441,13 +1392,9 @@ export const payInstallment = async (req, res) => {
   }
 };
 
-// ─── getDashboardStats (Quiz 2: 15pts - Sales Charts with Date Range Filter) ──
 
-/**
- * GET /api/v1/admin/dashboard-stats
- * Returns live operational telemetry, financial metrics, and timeline sales aggregation
- * with support for custom date range filters and preset filters.
- */
+
+
 export const getDashboardStats = async (req, res) => {
   try {
     const { startDate, endDate, preset = "30d" } = req.query;
@@ -1521,8 +1468,8 @@ export const getDashboardStats = async (req, res) => {
         {
           $group: {
             _id: null,
-            // Valuation uses only the cost stored in the database. Products
-            // without a recorded cost contribute zero until they are restocked.
+            
+            
             totalValue: {
               $sum: {
                 $multiply: [
@@ -1545,7 +1492,7 @@ export const getDashboardStats = async (req, res) => {
 
     const pendingApps = allApps.filter((a) => a.applicationStatus === "pending");
 
-    // Financial totals across all time
+    
     const completedOrders = allOrders.filter(
       (o) =>
         o.orderStatus !== "canceled" &&
@@ -1556,14 +1503,14 @@ export const getDashboardStats = async (req, res) => {
 
     const approvedApps = allApps.filter((a) => a.applicationStatus === "approved");
 
-    // "Active Loan" = approved + downpayment confirmed (linkedOrderId exists) + not fully paid
-    // This matches the exact logic used in the Orders & Finance module's displayStatus computation
+    
+    
     const activeLoanApps = allApps.filter((a) => {
       if (a.applicationStatus !== "approved") return false;
-      if (!a.linkedOrderId) return false; // still awaiting downpayment
+      if (!a.linkedOrderId) return false; 
       const paid = a.installmentsPaid || 0;
       const total = a.termMonths || 0;
-      return !(total > 0 && paid >= total); // exclude fully paid
+      return !(total > 0 && paid >= total); 
     });
     const downpaymentCollections = approvedApps.reduce(
       (sum, a) => sum + (a.downPayment || 0),
@@ -1576,9 +1523,9 @@ export const getDashboardStats = async (req, res) => {
 
     const totalRevenue = totalOrderSales + downpaymentCollections + amortizationCollections;
 
-    // Inventory and profitability telemetry (FR1.9).
-    // COGS uses the cost snapshot taken at sale time; older orders fall back to
-    // the product's current recorded cost.
+    
+    
+    
     const totalRestockSpent = restockTotals[0]?.totalSpent || 0;
     const inventoryValue = inventoryTotals[0]?.totalValue || 0;
     const cogs = completedOrders.reduce(
@@ -1618,7 +1565,7 @@ export const getDashboardStats = async (req, res) => {
     const recentRestocks = recentActivity.filter((t) => t.type === "restock");
     const recentStockActivity = recentActivity;
 
-    // Cash flow is all-time; the charts below handle the selected date range.
+    
     const cashFlow = {
       cashIn: totalRevenue,
       cashOut: totalRestockSpent,
@@ -1636,14 +1583,14 @@ export const getDashboardStats = async (req, res) => {
     const startKey = toYMD(start);
     const endKey = toYMD(end);
 
-    // Filtered range sales
+    
     const rangeOrders = allOrders.filter((o) => {
       if (o.orderStatus === "canceled") return false;
       const orderKey = toYMD(o.paidAt || o.updatedAt || o.createdAt);
       return orderKey >= startKey && orderKey <= endKey;
     });
 
-    // Generate continuous date map for smooth Line/Bar charting
+    
     const dayMap = {};
     const iter = new Date(start);
     iter.setHours(0, 0, 0, 0);
@@ -1673,7 +1620,7 @@ export const getDashboardStats = async (req, res) => {
 
     const salesTimeline = Object.values(dayMap);
 
-    // Category Sales breakdown within range
+    
     const categoryMap = {};
     for (const o of rangeOrders) {
       for (const item of o.orderItems || []) {
@@ -1696,7 +1643,7 @@ export const getDashboardStats = async (req, res) => {
       return sum + (o.orderItems || []).reduce((acc, it) => acc + (it.quantity || 1), 0);
     }, 0);
 
-    // Latest 8 orders for real live activity
+    
     const recentOrders = allOrders.slice(0, 8).map((o) => ({
       _id: o._id,
       orderNumber: o.orderNumber,
@@ -1713,7 +1660,7 @@ export const getDashboardStats = async (req, res) => {
       createdAt: o.createdAt,
     }));
 
-    // Formatted real pending underwriting applications
+    
     const formattedPendingApprovals = pendingApps.map((app) => ({
       _id: app._id,
       id: app.applicationRef,
@@ -1783,12 +1730,9 @@ export const getDashboardStats = async (req, res) => {
   }
 };
 
-// ─── cancelMyOrder ─────────────────────────────────────────────────────────────
 
-/**
- * PUT /api/v1/order/:id/cancel
- * Allows a customer to cancel their own order if it's still pending or processing.
- */
+
+
 export const cancelMyOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);

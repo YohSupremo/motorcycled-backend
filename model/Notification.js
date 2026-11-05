@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-// 4.15 notifications — from motorcycled-ref-database.pdf §4.15
+
 const notificationSchema = new mongoose.Schema(
   {
     recipient: {

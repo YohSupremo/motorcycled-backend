@@ -9,20 +9,20 @@ import Category from "./model/Category.js";
 import Order from "./model/Order.js";
 import { cleanBadWords } from "./controllers/reviewController.js";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Review seed — anchored to SPECIFIC products.
-//
-// For every product currently in the catalog this inserts 3-5 reviews whose
-// user + product references point at real User and Product documents, then
-// recomputes each product's ratings / numOfReviews from the visible reviews.
-//
-// Idempotent: each review carries a deterministic seedId, so re-running updates
-// the same documents instead of duplicating them. Nothing is deleted.
-// ─────────────────────────────────────────────────────────────────────────────
+
+
+
+
+
+
+
+
+
+
 
 const REVIEWER_PASSWORD = "Customer@12345";
 
-// A stable pool of customer authors the reviews are anchored to.
+
 const REVIEWERS = [
   { firstName: "Mark Anthony", lastName: "Ramos", email: "mark.ramos@example.com", contactNumber: "09171234501" },
   { firstName: "Karlo", lastName: "Mendoza", email: "karlo.m@example.com", contactNumber: "09171234502" },
@@ -36,9 +36,9 @@ const REVIEWERS = [
   { firstName: "Grace", lastName: "Aquino", email: "grace.aquino@example.com", contactNumber: "09171234510" },
 ];
 
-// Review templates keyed by category. {product} is replaced with the real
-// product name so the copy reads as if it were written about that unit.
-// `verified: false` marks reviews from customers without a completed order.
+
+
+
 const REVIEW_POOL = {
   Motorcycles: [
     { rating: 5, title: "Smooth release at the branch", comment: "The {product} was turned over exactly as described, complete with the owner's manual and warranty booklet. Zero issues on my first long ride home." },
@@ -92,15 +92,15 @@ const REVIEW_POOL = {
   ],
 };
 
-// Fallback for any product whose category name is not in REVIEW_POOL.
+
 const DEFAULT_POOL = [
   { rating: 5, title: "Genuine and well packed", comment: "The {product} arrived sealed and exactly as described. No issues at all after using it for a couple of weeks." },
   { rating: 4, title: "Good value", verified: false, comment: "Happy with the {product} so far. Quality is good for the price and it was delivered on time." },
   { rating: 5, title: "Recommended", comment: "Would order the {product} again. Authentic item and the branch staff were helpful during pickup." },
 ];
 
-// Extra review(s) with explicit flags to exercise moderation + verification.
-// Anchored to the named product below.
+
+
 const EXTRA_REVIEWS = {
   "Kawasaki Ninja 400 SE": [
     { rating: 1, hidden: true, verified: false, title: "Check this out", comment: "Best deals on aftermarket parts at cheap-parts-promo.example, message me for a discount code." },
@@ -113,8 +113,8 @@ const EXTRA_REVIEWS = {
 const slug = (s) =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-// Deterministic small integer derived from a string, used to vary the number
-// of reviews and the starting template/author per product.
+
+
 const hashIndex = (s) => {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 100000;
@@ -188,7 +188,7 @@ async function seed() {
       process.exit(0);
     }
 
-    // Ensure test customer user has a delivered order for testing reviews on live site
+    
     const testUser = await User.findOne({ email: "alwin.benitez9@gmail.com" });
     if (testUser && products.length > 0) {
       const sampleProd = products[0];
@@ -236,7 +236,7 @@ async function seed() {
       const categoryName = product.category?.name || "General";
       const pool = REVIEW_POOL[categoryName] || DEFAULT_POOL;
 
-      // 3 to 5 reviews per product, deterministically chosen.
+      
       const seed = hashIndex(product.name);
       const count = 3 + (seed % 3);
 
@@ -255,7 +255,7 @@ async function seed() {
         });
       }
 
-      // Append any explicit extra/moderation reviews for this product.
+      
       const extras = EXTRA_REVIEWS[product.name] || [];
       extras.forEach((template, i) => {
         const reviewer =

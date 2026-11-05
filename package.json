@@ -2,7 +2,8 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon app.js",
-    "start": "node app.js"
+    "start": "node app.js",
+    "seed:demo-shop": "node seed_demo_shop.js"
   },
   "dependencies": {
     "bad-words": "^4.1.5",

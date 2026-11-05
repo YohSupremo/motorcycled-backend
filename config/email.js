@@ -1,9 +1,6 @@
 import nodemailer from "nodemailer";
 
-/**
- * Creates and returns a Nodemailer transporter.
- * Uses environment variables or creates an Ethereal test account if credentials are empty.
- */
+
 export const getTransporter = async () => {
   const host = process.env.SMTP_HOST || "sandbox.smtp.mailtrap.io";
   const port = Number(process.env.SMTP_PORT) || 2525;

@@ -67,7 +67,7 @@ async function seed() {
 
       console.log(`${b.name} uploaded: ${uploadRes.secure_url}`);
 
-      // Upsert into Brand collection
+      
       const updated = await Brand.findOneAndUpdate(
         { name: b.name },
         {

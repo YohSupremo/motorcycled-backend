@@ -10,7 +10,7 @@ const orderItemSchema = new mongoose.Schema(
     name: { type: String, required: true },
     quantity: { type: Number, required: true, min: [1, "Quantity must be at least 1"] },
     price: { type: Number, required: true, min: [0, "Price cannot be negative"] },
-    // Cost snapshot at the time of sale, used for COGS reporting (FR1.9).
+    
     costPrice: { type: Number, default: 0, min: [0, "Cost price cannot be negative"] },
     image: { type: String },
     itemType: {
@@ -91,12 +91,12 @@ const orderSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-// Auto-generate orderNumber and enforce paymentStatus before validation
+
 orderSchema.pre("validate", async function () {
   if (this.paymentMethod) {
     const m = String(this.paymentMethod).toLowerCase().trim();
     if (m === "gcash" || m === "maya" || m === "bank_deposit") {
-      // Online payments are never COD
+      
       if (!this.paymentStatus || this.paymentStatus === "pending") {
         this.paymentStatus = "paid";
       }
@@ -132,7 +132,7 @@ orderSchema.pre("validate", async function () {
   }
 });
 
-// Indexes for fast customer order lookups and admin order status filtering
+
 orderSchema.index({ user: 1, createdAt: -1 });
 orderSchema.index({ orderStatus: 1, createdAt: -1 });
 

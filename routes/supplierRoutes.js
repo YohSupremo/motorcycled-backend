@@ -10,7 +10,7 @@ import { auth, authorizeRoles } from "../middleware/authMiddleware.js";
 
 const router = Router();
 
-// Admin supplier management (FR1.6.2 — Supplier Details)
+
 router.get("/suppliers", auth, authorizeRoles("admin"), getSuppliers);
 
 router.post(

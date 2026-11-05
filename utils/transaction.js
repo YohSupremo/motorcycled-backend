@@ -12,10 +12,7 @@ const isUnknownCommitResult = (error) =>
   error?.hasErrorLabel?.("UnknownTransactionCommitResult") ||
   /UnknownTransactionCommitResult/i.test(error?.message || "");
 
-/**
- * Run a unit of work inside a MongoDB transaction.
- * Retries the whole callback on transient write conflicts.
- */
+
 export const runInTransaction = async (work) => {
   let lastError;
 

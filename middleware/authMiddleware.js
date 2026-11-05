@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import User from "../model/User.js";
 
-// Protects routes: requires a valid JWT in the "token" cookie.
+
 export const auth = async (req, res, next) => {
   try {
     const { token } = req.cookies;
@@ -34,7 +34,7 @@ export const auth = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
-    // Handles expired and malformed tokens gracefully.
+    
     return res.status(401).json({
       message: "Invalid or expired token, please login again",
       success: false,
@@ -42,7 +42,7 @@ export const auth = async (req, res, next) => {
   }
 };
 
-// Restricts a route to a specific set of roles (e.g. authorizeRoles("admin")).
+
 export const authorizeRoles = (...roles) => {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {

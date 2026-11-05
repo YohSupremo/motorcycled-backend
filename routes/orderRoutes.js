@@ -21,7 +21,7 @@ import {
 
 const router = express.Router();
 
-// ── Customer routes ──────────────────────────────────────────────────────────
+
 router.post("/checkout", auth, newCheckout);
 router.post("/order/new", auth, newOrder);
 router.get("/orders/me", auth, getMyOrders);
@@ -32,7 +32,7 @@ router.get("/application/:id", auth, getApplicationDetails);
 router.post("/application/:id/pay-installment", auth, payInstallment);
 router.put("/application/:id/submit-downpayment", auth, submitDownpayment);
 
-// ── Admin routes ─────────────────────────────────────────────────────────────
+
 router.get("/admin/dashboard-stats", auth, authorizeRoles("admin"), getDashboardStats);
 router.get("/admin/orders", auth, authorizeRoles("admin"), getAdminOrders);
 router.get("/admin/applications", auth, authorizeRoles("admin"), getAdminApplications);

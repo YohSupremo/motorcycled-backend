@@ -1,8 +1,6 @@
 import Notification from "../model/Notification.js";
 
-/**
- * Send and persist notification (email + in_app ledger)
- */
+
 export const sendNotification = async ({
   recipientId,
   type,
@@ -30,9 +28,7 @@ export const sendNotification = async ({
   }
 };
 
-/**
- * Trigger order placed email notification with attached PDF receipt
- */
+
 export const notifyOrderPlaced = async (order, user) => {
   const subject = `MotorCycled Order Confirmation — ${order.orderNumber}`;
   const itemsText = (order.orderItems || [])
@@ -50,7 +46,7 @@ export const notifyOrderPlaced = async (order, user) => {
     `Items:\n${itemsText}\n\n` +
     `You can track your order status in your MotorCycled Account under My Orders.`;
 
-  // Asynchronously generate PDF and send official email
+  
   try {
     const { generateOrderInvoicePDF } = await import("./pdfService.js");
     const { sendOrderStatusEmail } = await import("./emailService.js");
@@ -74,9 +70,7 @@ export const notifyOrderPlaced = async (order, user) => {
   });
 };
 
-/**
- * Trigger installment application status notification
- */
+
 export const notifyInstallmentUpdate = async (application, user, status, reason = "") => {
   const isApproved = status === "approved";
   const subject = `MotorCycled Installment Application ${application.applicationRef} — ${isApproved ? "Approved" : "Update"}`;
