@@ -31,11 +31,6 @@ export const cleanBadWords = (text) => {
   }
 };
 
-// Calls an async (req,res) handler and forwards thrown errors to Express,
-// keeping each controller body free of repetitive try/catch noise.
-const asyncHandler = (fn) => (req, res, next) =>
-  Promise.resolve(fn(req, res, next)).catch(next);
-
 // Recompute a product's ratings average and numOfReviews from its visible
 // reviews, then persist both onto the Product document.
 const recomputeProductRating = async (productId) => {
@@ -93,56 +88,67 @@ const validateReviewInput = (rating, comment) => {
 
 // ─── PUBLIC: LIST REVIEWS FOR A PRODUCT ───────────────────────────────────────
 // GET /api/v1/product/:id/reviews
-export const getProductReviews = asyncHandler(async (req, res) => {
-  const { id } = req.params;
+export const getProductReviews = async (req, res) => {
+  try {
+    const { id } = req.params;
 
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Invalid product id" });
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid product id" });
+    }
+
+    const reviews = await Review.find({ product: id, isHidden: false })
+      .populate("user", "firstName lastName profilePicture")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({ success: true, count: reviews.length, reviews });
+  } catch (error) {
+    console.error("getProductReviews error:", error);
+    return res.status(500).json({ success: false, message: "Server error fetching reviews" });
   }
-
-  const reviews = await Review.find({ product: id, isHidden: false })
-    .populate("user", "firstName lastName profilePicture")
-    .sort({ createdAt: -1 });
-
-  return res.status(200).json({ success: true, count: reviews.length, reviews });
-});
+};
 
 // ─── CUSTOMER: OWN REVIEW + ELIGIBILITY ───────────────────────────────────────
 // GET /api/v1/product/:id/my-review  (auth required)
-export const getMyReview = asyncHandler(async (req, res) => {
-  const { id: productId } = req.params;
+export const getMyReview = async (req, res) => {
+  try {
+    const { id: productId } = req.params;
 
-  if (!mongoose.Types.ObjectId.isValid(productId)) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Invalid product id" });
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid product id" });
+    }
+
+    const [review, flags] = await Promise.all([
+      Review.findOne({ product: productId, user: req.user._id }),
+      getOrderFlags(req.user._id, productId),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      review,
+      ordered: flags.ordered,
+      received: flags.received,
+    });
+  } catch (error) {
+    console.error("getMyReview error:", error);
+    return res.status(500).json({ success: false, message: "Server error fetching your review" });
   }
-
-  const [review, flags] = await Promise.all([
-    Review.findOne({ product: productId, user: req.user._id }),
-    getOrderFlags(req.user._id, productId),
-  ]);
-
-  return res.status(200).json({
-    success: true,
-    review,
-    ordered: flags.ordered,
-    received: flags.received,
-  });
-});
+};
 
 // ─── CUSTOMER: CREATE OWN REVIEW ──────────────────────────────────────────────
 // POST /api/v1/product/:id/review  (auth required)
-export const createReview = asyncHandler(async (req, res) => {
-  const { id: productId } = req.params;
+export const createReview = async (req, res) => {
+  try {
+    const { id: productId } = req.params;
 
-  if (!mongoose.Types.ObjectId.isValid(productId)) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Invalid product id" });
-  }
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid product id" });
+    }
 
   const product = await Product.findById(productId);
   if (!product || product.isArchived) {
@@ -198,19 +204,24 @@ export const createReview = asyncHandler(async (req, res) => {
     "ratings numOfReviews",
   );
 
-  return res.status(201).json({
-    success: true,
-    message: "Review submitted",
-    review,
-    ratings: updated.ratings,
-    numOfReviews: updated.numOfReviews,
-  });
-});
+    return res.status(201).json({
+      success: true,
+      message: "Review submitted",
+      review,
+      ratings: updated.ratings,
+      numOfReviews: updated.numOfReviews,
+    });
+  } catch (error) {
+    console.error("createReview error:", error);
+    return res.status(500).json({ success: false, message: "Server error creating review" });
+  }
+};
 
 // ─── CUSTOMER: UPDATE OWN REVIEW ──────────────────────────────────────────────
 // PUT /api/v1/product/:id/review  (auth required)
-export const updateReview = asyncHandler(async (req, res) => {
-  const { id: productId } = req.params;
+export const updateReview = async (req, res) => {
+  try {
+    const { id: productId } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(productId)) {
     return res
@@ -251,19 +262,24 @@ export const updateReview = asyncHandler(async (req, res) => {
     "ratings numOfReviews",
   );
 
-  return res.status(200).json({
-    success: true,
-    message: "Review updated",
-    review,
-    ratings: updated.ratings,
-    numOfReviews: updated.numOfReviews,
-  });
-});
+    return res.status(200).json({
+      success: true,
+      message: "Review updated",
+      review,
+      ratings: updated.ratings,
+      numOfReviews: updated.numOfReviews,
+    });
+  } catch (error) {
+    console.error("updateReview error:", error);
+    return res.status(500).json({ success: false, message: "Server error updating review" });
+  }
+};
 
 // ─── CUSTOMER: DELETE OWN REVIEW ──────────────────────────────────────────────
 // DELETE /api/v1/product/:id/review  (auth required)
-export const deleteMyReview = asyncHandler(async (req, res) => {
-  const { id: productId } = req.params;
+export const deleteMyReview = async (req, res) => {
+  try {
+    const { id: productId } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(productId)) {
     return res
@@ -284,24 +300,34 @@ export const deleteMyReview = asyncHandler(async (req, res) => {
   await review.deleteOne();
   await recomputeProductRating(productId);
 
-  return res.status(200).json({ success: true, message: "Review deleted" });
-});
+    return res.status(200).json({ success: true, message: "Review deleted" });
+  } catch (error) {
+    console.error("deleteMyReview error:", error);
+    return res.status(500).json({ success: false, message: "Server error deleting review" });
+  }
+};
 
 // ─── ADMIN: LIST ALL REVIEWS ──────────────────────────────────────────────────
 // GET /api/v1/admin/reviews
-export const getAllReviews = asyncHandler(async (req, res) => {
-  const reviews = await Review.find()
-    .populate("product", "name")
-    .populate("user", "firstName lastName email profilePicture")
-    .sort({ createdAt: -1 });
+export const getAllReviews = async (req, res) => {
+  try {
+    const reviews = await Review.find()
+      .populate("product", "name")
+      .populate("user", "firstName lastName email profilePicture")
+      .sort({ createdAt: -1 });
 
-  return res.status(200).json({ success: true, count: reviews.length, reviews });
-});
+    return res.status(200).json({ success: true, count: reviews.length, reviews });
+  } catch (error) {
+    console.error("getAllReviews error:", error);
+    return res.status(500).json({ success: false, message: "Server error fetching all reviews" });
+  }
+};
 
 // ─── ADMIN: TOGGLE VISIBILITY (MODERATION) ────────────────────────────────────
 // PUT /api/v1/admin/review/:id/hide
-export const toggleReviewVisibility = asyncHandler(async (req, res) => {
-  const review = await Review.findById(req.params.id);
+export const toggleReviewVisibility = async (req, res) => {
+  try {
+    const review = await Review.findById(req.params.id);
   if (!review) {
     return res
       .status(404)
@@ -312,9 +338,13 @@ export const toggleReviewVisibility = asyncHandler(async (req, res) => {
   await review.save();
   await recomputeProductRating(review.product);
 
-  return res.status(200).json({
-    success: true,
-    message: review.isHidden ? "Review hidden" : "Review published",
-    review,
-  });
-});
+    return res.status(200).json({
+      success: true,
+      message: review.isHidden ? "Review hidden" : "Review published",
+      review,
+    });
+  } catch (error) {
+    console.error("toggleReviewVisibility error:", error);
+    return res.status(500).json({ success: false, message: "Server error updating review visibility" });
+  }
+};
