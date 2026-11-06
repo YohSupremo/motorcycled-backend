@@ -31,6 +31,12 @@ export const cleanBadWords = (text) => {
   }
 };
 
+const sanitizeReview = (review) => {
+  const sanitized = review.toObject ? review.toObject() : { ...review };
+  sanitized.comment = cleanBadWords(sanitized.comment);
+  sanitized.title = cleanBadWords(sanitized.title);
+  return sanitized;
+};
 
 
 const recomputeProductRating = async (productId) => {
@@ -102,7 +108,11 @@ export const getProductReviews = async (req, res) => {
       .populate("user", "firstName lastName profilePicture")
       .sort({ createdAt: -1 });
 
-    return res.status(200).json({ success: true, count: reviews.length, reviews });
+    return res.status(200).json({
+      success: true,
+      count: reviews.length,
+      reviews: reviews.map(sanitizeReview),
+    });
   } catch (error) {
     console.error("getProductReviews error:", error);
     return res.status(500).json({ success: false, message: "Server error fetching reviews" });
@@ -128,7 +138,7 @@ export const getMyReview = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      review,
+      review: review ? sanitizeReview(review) : null,
       ordered: flags.ordered,
       received: flags.received,
     });
@@ -187,14 +197,13 @@ export const createReview = async (req, res) => {
 
   
   const cleanedTitle = cleanBadWords((req.body.title || "").trim());
-  const cleanedComment = cleanBadWords(comment);
 
   const review = await Review.create({
     product: productId,
     user: req.user._id,
     rating,
     title: cleanedTitle,
-    comment: cleanedComment,
+    comment,
     isVerifiedPurchase: flags.received,
     order: flags.orderId,
   });
@@ -203,11 +212,10 @@ export const createReview = async (req, res) => {
   const updated = await Product.findById(productId).select(
     "ratings numOfReviews",
   );
-
     return res.status(201).json({
       success: true,
       message: "Review submitted",
-      review,
+      review: sanitizeReview(review),
       ratings: updated.ratings,
       numOfReviews: updated.numOfReviews,
     });
@@ -252,7 +260,7 @@ export const updateReview = async (req, res) => {
   
   review.rating = rating;
   review.title = cleanBadWords((req.body.title || "").trim());
-  review.comment = cleanBadWords(comment);
+  review.comment = comment;
   review.isVerifiedPurchase = flags.received;
   review.order = flags.orderId;
   await review.save();
@@ -261,11 +269,10 @@ export const updateReview = async (req, res) => {
   const updated = await Product.findById(productId).select(
     "ratings numOfReviews",
   );
-
     return res.status(200).json({
       success: true,
       message: "Review updated",
-      review,
+      review: sanitizeReview(review),
       ratings: updated.ratings,
       numOfReviews: updated.numOfReviews,
     });
@@ -316,7 +323,11 @@ export const getAllReviews = async (req, res) => {
       .populate("user", "firstName lastName email profilePicture")
       .sort({ createdAt: -1 });
 
-    return res.status(200).json({ success: true, count: reviews.length, reviews });
+    return res.status(200).json({
+      success: true,
+      count: reviews.length,
+      reviews: reviews.map(sanitizeReview),
+    });
   } catch (error) {
     console.error("getAllReviews error:", error);
     return res.status(500).json({ success: false, message: "Server error fetching all reviews" });
