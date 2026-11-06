@@ -1585,7 +1585,12 @@ export const getDashboardStats = async (req, res) => {
 
     
     const rangeOrders = allOrders.filter((o) => {
-      if (o.orderStatus === "canceled") return false;
+      if (
+        o.orderStatus !== "completed" ||
+        o.paymentStatus === "refunded"
+      ) {
+        return false;
+      }
       const orderKey = toYMD(o.paidAt || o.updatedAt || o.createdAt);
       return orderKey >= startKey && orderKey <= endKey;
     });
