@@ -196,13 +196,11 @@ export const createReview = async (req, res) => {
   }
 
   
-  const cleanedTitle = cleanBadWords((req.body.title || "").trim());
-
   const review = await Review.create({
     product: productId,
     user: req.user._id,
     rating,
-    title: cleanedTitle,
+    title: (req.body.title || "").trim(),
     comment,
     isVerifiedPurchase: flags.received,
     order: flags.orderId,
@@ -259,7 +257,7 @@ export const updateReview = async (req, res) => {
 
   
   review.rating = rating;
-  review.title = cleanBadWords((req.body.title || "").trim());
+  review.title = (req.body.title || "").trim();
   review.comment = comment;
   review.isVerifiedPurchase = flags.received;
   review.order = flags.orderId;
